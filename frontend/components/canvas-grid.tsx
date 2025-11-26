@@ -107,16 +107,16 @@ export function CanvasGrid({
     const viewportWidth = container.clientWidth;
     const viewportHeight = container.clientHeight;
 
-    // Calculate which cells are visible (with buffer)
-    const startCol = Math.max(0, Math.floor(scrollLeft / cellSize) - 1);
+    // Calculate which cells are visible (with larger buffer to prevent clipping)
+    const startCol = Math.max(0, Math.floor(scrollLeft / cellSize) - 2);
     const endCol = Math.min(
       cols,
-      Math.ceil((scrollLeft + viewportWidth) / cellSize) + 1
+      Math.ceil((scrollLeft + viewportWidth) / cellSize) + 2
     );
-    const startRow = Math.max(0, Math.floor(scrollTop / cellSize) - 1);
+    const startRow = Math.max(0, Math.floor(scrollTop / cellSize) - 2);
     const endRow = Math.min(
       rows,
-      Math.ceil((scrollTop + viewportHeight) / cellSize) + 1
+      Math.ceil((scrollTop + viewportHeight) / cellSize) + 2
     );
 
     // Clear canvas
@@ -185,16 +185,20 @@ export function CanvasGrid({
       ctx.setLineDash([8, 6]);
 
       // Draw from antennaData (only visible ones)
+      // Note: antenna.radius is already in cells from backend
+      // Radius represents full squares to cover in each direction from antenna
       for (const antenna of antennaData) {
+        const radiusInCells = antenna.radius; // Already in cells from backend
         if (
-          antenna.x >= startCol - antenna.radius &&
-          antenna.x <= endCol + antenna.radius &&
-          antenna.y >= startRow - antenna.radius &&
-          antenna.y <= endRow + antenna.radius
+          antenna.x >= startCol - radiusInCells &&
+          antenna.x <= endCol + radiusInCells &&
+          antenna.y >= startRow - radiusInCells &&
+          antenna.y <= endRow + radiusInCells
         ) {
           const centerX = (antenna.x + 0.5) * cellSize;
           const centerY = (antenna.y + 0.5) * cellSize;
-          const radius = antenna.radius * cellSize;
+          // Circle radius extends to far edge of coverage squares: (radius + 0.5) cells
+          const radius = (radiusInCells + 0.5) * cellSize;
 
           // Fill with white, nearly transparent
           ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
@@ -214,28 +218,31 @@ export function CanvasGrid({
       for (const [key, type] of manualAntennas) {
         const [r, c] = key.split(",").map(Number);
         const spec = antennaSpecs.find((s) => s.type === type);
-        if (
-          spec &&
-          c >= startCol - spec.radius &&
-          c <= endCol + spec.radius &&
-          r >= startRow - spec.radius &&
-          r <= endRow + spec.radius
-        ) {
-          const centerX = (c + 0.5) * cellSize;
-          const centerY = (r + 0.5) * cellSize;
-          const radius = spec.radius * cellSize;
+        if (spec) {
+          const radiusInCells = spec.radius; // Already in cells from API
+          if (
+            c >= startCol - radiusInCells &&
+            c <= endCol + radiusInCells &&
+            r >= startRow - radiusInCells &&
+            r <= endRow + radiusInCells
+          ) {
+            const centerX = (c + 0.5) * cellSize;
+            const centerY = (r + 0.5) * cellSize;
+            // Circle radius extends to far edge of coverage squares: (radius + 0.5) cells
+            const radius = (radiusInCells + 0.5) * cellSize;
 
-          // Fill with white, nearly transparent
-          ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
-          ctx.beginPath();
-          ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-          ctx.fill();
+            // Fill with white, nearly transparent
+            ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.fill();
 
-          // Stroke with white dashed outline
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
-          ctx.beginPath();
-          ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-          ctx.stroke();
+            // Stroke with white dashed outline
+            ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.stroke();
+          }
         }
       }
 
@@ -343,14 +350,18 @@ export function CanvasGrid({
   ); // Pan handlers
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
-        // Middle click or Shift+Click
+      if (
+        e.button === 1 ||
+        (e.button === 0 && e.shiftKey) ||
+        (e.button === 0 && panMode)
+      ) {
+        // Middle click, Shift+Click, or pan mode
         setIsDragging(true);
         setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
         e.preventDefault();
       }
     },
-    [pan]
+    [pan, panMode]
   );
 
   const handleMouseMoveCanvas = useCallback(
@@ -470,10 +481,8 @@ export function CanvasGrid({
       </div>
 
       <div
+        ref={containerRef}
         className={`overflow-auto ${isFullscreen ? "h-screen w-screen" : "max-h-[800px] max-w-full"}`}
-        style={{
-          cursor: isDragging ? "grabbing" : panMode ? "grab" : "default",
-        }}
       >
         <canvas
           ref={canvasRef}
@@ -485,9 +494,9 @@ export function CanvasGrid({
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseLeave}
           onWheel={handleWheel}
-          className="cursor-pointer"
           style={{
             imageRendering: cellSize < 10 ? "pixelated" : "auto",
+            cursor: isDragging ? "grabbing" : panMode ? "grab" : "crosshair",
           }}
         />
       </div>

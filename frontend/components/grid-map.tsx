@@ -111,110 +111,6 @@ export function GridMap({
     }
   };
 
-  // Create merged coverage paths using SVG
-  const coverageSVG = useMemo(() => {
-    // Skip expensive SVG rendering for very large grids
-    if (rows * cols > 50000) return null; // 223x223 threshold
-
-    // Collect all antennas (optimized + manual)
-    const allAntennas: AntennaPlacement[] = [...antennaData];
-
-    // Add manually placed antennas
-    manualAntennas.forEach((type, key) => {
-      const [r, c] = key.split(",").map(Number);
-      const spec = antennaSpecs.find((s) => s.type === type);
-      if (spec) {
-        allAntennas.push({
-          x: c,
-          y: r,
-          type: type,
-          radius: spec.radius,
-          max_users: spec.max_users,
-          cost: spec.cost,
-        });
-      }
-    });
-
-    if (allAntennas.length === 0) return null;
-
-    // Create a coverage map
-    const coverageMap: boolean[][] = Array.from({ length: rows }, () =>
-      Array.from({ length: cols }, () => false)
-    );
-
-    // Mark all covered cells
-    allAntennas.forEach((antenna) => {
-      const r = antenna.radius;
-      for (let dy = -r; dy <= r; dy++) {
-        for (let dx = -r; dx <= r; dx++) {
-          if (dx * dx + dy * dy <= r * r) {
-            const targetY = antenna.y + dy;
-            const targetX = antenna.x + dx;
-            if (
-              targetY >= 0 &&
-              targetY < rows &&
-              targetX >= 0 &&
-              targetX < cols
-            ) {
-              coverageMap[targetY][targetX] = true;
-            }
-          }
-        }
-      }
-    });
-
-    // Create path for merged coverage areas
-    const paths: string[] = [];
-    const visited: boolean[][] = Array.from({ length: rows }, () =>
-      Array.from({ length: cols }, () => false)
-    );
-
-    const floodFill = (startY: number, startX: number): [number, number][] => {
-      const stack: [number, number][] = [[startY, startX]];
-      const region: [number, number][] = [];
-
-      while (stack.length > 0) {
-        const [y, x] = stack.pop()!;
-
-        if (y < 0 || y >= rows || x < 0 || x >= cols) continue;
-        if (visited[y][x] || !coverageMap[y][x]) continue;
-
-        visited[y][x] = true;
-        region.push([y, x]);
-
-        // Check 4 neighbors
-        stack.push([y - 1, x], [y + 1, x], [y, x - 1], [y, x + 1]);
-      }
-
-      return region;
-    };
-
-    // Find all connected regions
-    for (let y = 0; y < rows; y++) {
-      for (let x = 0; x < cols; x++) {
-        if (coverageMap[y][x] && !visited[y][x]) {
-          const region = floodFill(y, x);
-          if (region.length > 0) {
-            // Create a smooth path around this region
-            const minX = Math.min(...region.map(([_, x]) => x));
-            const maxX = Math.max(...region.map(([_, x]) => x));
-            const minY = Math.min(...region.map(([y, _]) => y));
-            const maxY = Math.max(...region.map(([y, _]) => y));
-
-            const padding = 0.4;
-            const rect = `M ${minX * cellSize - padding * cellSize} ${minY * cellSize - padding * cellSize} 
-                                     L ${(maxX + 1) * cellSize + padding * cellSize} ${minY * cellSize - padding * cellSize}
-                                     L ${(maxX + 1) * cellSize + padding * cellSize} ${(maxY + 1) * cellSize + padding * cellSize}
-                                     L ${minX * cellSize - padding * cellSize} ${(maxY + 1) * cellSize + padding * cellSize} Z`;
-            paths.push(rect);
-          }
-        }
-      }
-    }
-
-    return paths;
-  }, [antennaData, rows, cols, cellSize, manualAntennas, antennaSpecs]);
-
   // Collect all antennas for rendering circles
   const allAntennasForCircles = useMemo(() => {
     const all: AntennaPlacement[] = [...antennaData];
@@ -271,28 +167,15 @@ export function GridMap({
               </filter>
             </defs>
 
-            {/* Draw merged coverage areas - white with 50% transparency */}
-            {coverageSVG &&
-              coverageSVG.map((path, idx) => (
-                <path
-                  key={idx}
-                  d={path}
-                  fill="white"
-                  fillOpacity="0.5"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeOpacity="0.5"
-                  filter="url(#glow)"
-                  rx="8"
-                />
-              ))}
-
             {/* Draw individual antenna coverage circles with antenna colors */}
             {allAntennasForCircles.map((antenna, idx) => {
-              const styles = getAntennaStyles(antenna.type);
-              const centerX = (antenna.x + 0.5) * cellSize;
-              const centerY = (antenna.y + 0.5) * cellSize;
-              const radius = antenna.radius * cellSize;
+              // Account for grid gap (gap-1 = 4px in Tailwind)
+              const gap = isLargeGrid ? 1 : 4;
+              const centerX = antenna.x * (cellSize + gap) + cellSize / 2;
+              const centerY = antenna.y * (cellSize + gap) + cellSize / 2;
+              // Backend returns radius in cells already, add 0.5 to cover full squares
+              const radiusInCells = antenna.radius;
+              const radius = (radiusInCells + 0.5) * cellSize;
 
               return (
                 <circle
@@ -300,13 +183,10 @@ export function GridMap({
                   cx={centerX}
                   cy={centerY}
                   r={radius}
-                  fill={styles.color}
-                  fillOpacity="0.1"
-                  stroke={styles.color}
-                  strokeWidth="2"
-                  strokeOpacity="0.6"
-                  strokeDasharray="5,5"
-                  filter="url(#glow)"
+                  fill="rgba(255, 255, 255, 0.08)"
+                  stroke="rgba(255, 255, 255, 0.4)"
+                  strokeWidth="3"
+                  strokeDasharray="8,6"
                 />
               );
             })}
@@ -341,12 +221,10 @@ export function GridMap({
                     key={`${r}-${c}`}
                     onClick={() => onCellClick(r, c)}
                     className={cn(
-                      isLargeGrid
-                        ? "flex items-center justify-center cursor-pointer"
-                        : "rounded-md flex items-center justify-center cursor-pointer transition-all duration-300",
+                      "flex items-center justify-center cursor-pointer",
                       isLargeGrid
                         ? "border-slate-800/30"
-                        : "border border-slate-800/50 hover:border-slate-600 relative",
+                        : "rounded-md border border-slate-800/50 hover:border-slate-600 relative transition-all duration-300",
                       cell === "empty" &&
                         !isCovered &&
                         (isLargeGrid
@@ -366,7 +244,7 @@ export function GridMap({
                         antennaStyles &&
                         (isLargeGrid
                           ? `${antennaStyles.bg} ${antennaStyles.border} ${antennaStyles.text} z-10`
-                          : `${antennaStyles.bg} ${antennaStyles.border} ${antennaStyles.glow} ${antennaStyles.text} z-10 scale-110`)
+                          : `${antennaStyles.bg} ${antennaStyles.border} ${antennaStyles.glow} ${antennaStyles.text} z-10`)
                     )}
                     style={{
                       width: `${cellSize}px`,
