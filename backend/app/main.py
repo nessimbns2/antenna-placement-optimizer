@@ -128,7 +128,8 @@ async def optimize_antenna_placement(request: OptimizationRequest) -> Optimizati
                 height=request.height,
                 target_coverage=request.target_coverage,
                 antenna_specs=ANTENNA_SPECS,
-                houses=request.obstacles
+                houses=request.obstacles,
+                allowed_antenna_types=request.allowed_antenna_types
             )
             result = algorithm.optimize()
         else:

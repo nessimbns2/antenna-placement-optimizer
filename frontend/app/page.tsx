@@ -31,11 +31,15 @@ export default function Home() {
   const [editMode, setEditMode] = useState<"house" | "antenna">("house");
   const [selectedAntennaType, setSelectedAntennaType] =
     useState<AntennaType>("Pico");
+  const [selectedPattern, setSelectedPattern] = useState<string>("random");
   const [algorithm, setAlgorithm] = useState<
     "greedy" | "genetic" | "simulated-annealing" | "brute-force"
   >("greedy");
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [antennaSpecs, setAntennaSpecs] = useState<AntennaSpec[]>([]);
+  const [allowedAntennaTypes, setAllowedAntennaTypes] = useState<
+    Set<AntennaType>
+  >(new Set<AntennaType>(["Femto", "Pico", "Micro", "Macro"]));
   const [optimizationResult, setOptimizationResult] =
     useState<OptimizationResponse | null>(null);
 
@@ -51,14 +55,23 @@ export default function Home() {
         );
         if (response.ok) {
           const data = await response.json();
-          setAntennaSpecs(data.antenna_types);
+          setAntennaSpecs(data.antenna_types || []);
         }
       } catch (error) {
-        console.error("Failed to fetch antenna types:", error);
+        console.error("Failed to fetch antenna types", error);
       }
     };
     fetchAntennaTypes();
   }, []);
+
+  // Auto-generate when pattern changes (except on initial load)
+  useEffect(() => {
+    // Skip if grid hasn't been initialized yet
+    if (grid.length === 0) return;
+
+    // Auto-generate when pattern changes from dropdown
+    handleRandomize();
+  }, [selectedPattern]);
 
   // Initialize grid
   useEffect(() => {
@@ -151,19 +164,530 @@ export default function Home() {
     setGrid(newGrid);
   };
 
-  const handleRandomize = () => {
-    const newGrid = new Array(rows);
-    const houseProbability = rows * cols > 50000 ? 0.05 : 0.15; // Lower density for large grids
-
+  const handleRandomize = (patternName?: string) => {
+    const newGrid: CellType[][] = new Array(rows);
     for (let r = 0; r < rows; r++) {
-      newGrid[r] = new Array(cols);
-      for (let c = 0; c < cols; c++) {
-        newGrid[r][c] = Math.random() < houseProbability ? "house" : "empty";
+      newGrid[r] = new Array(cols).fill("empty");
+    }
+
+    // All available patterns with metadata
+    const allPatterns = [
+      {
+        name: "circular_clusters",
+        label: "Circular Clusters",
+        weight: 15,
+        fn: generateCircularClusters,
+      },
+      {
+        name: "isolated_houses",
+        label: "Isolated Houses",
+        weight: 12,
+        fn: generateIsolatedHouses,
+      },
+      {
+        name: "urban_grid",
+        label: "Urban Grid",
+        weight: 12,
+        fn: generateUrbanGrid,
+      },
+      {
+        name: "suburban_spread",
+        label: "Suburban Spread",
+        weight: 12,
+        fn: generateSuburbanSpread,
+      },
+      {
+        name: "linear_streets",
+        label: "Linear Streets",
+        weight: 8,
+        fn: generateLinearStreets,
+      },
+      {
+        name: "random_scattered",
+        label: "Random Scattered",
+        weight: 8,
+        fn: generateRandomScattered,
+      },
+      {
+        name: "dense_downtown",
+        label: "Dense Downtown",
+        weight: 5,
+        fn: generateDenseDowntown,
+      },
+      {
+        name: "donut_ring",
+        label: "Donut Ring",
+        weight: 6,
+        fn: generateDonutRing,
+      },
+      {
+        name: "diagonal_lines",
+        label: "Diagonal Lines",
+        weight: 6,
+        fn: generateDiagonalLines,
+      },
+      {
+        name: "coastal_settlement",
+        label: "Coastal Settlement",
+        weight: 5,
+        fn: generateCoastalSettlement,
+      },
+      {
+        name: "mountain_valley",
+        label: "Mountain Valley",
+        weight: 5,
+        fn: generateMountainValley,
+      },
+      {
+        name: "checkerboard",
+        label: "Checkerboard",
+        weight: 4,
+        fn: generateCheckerboard,
+      },
+      {
+        name: "riverside_towns",
+        label: "Riverside Towns",
+        weight: 4,
+        fn: generateRiversideTowns,
+      },
+      {
+        name: "highway_network",
+        label: "Highway Network",
+        weight: 3,
+        fn: generateHighwayNetwork,
+      },
+    ];
+
+    // If specific pattern selected, use it
+    const usePattern = patternName || selectedPattern;
+
+    if (usePattern !== "random") {
+      const pattern = allPatterns.find((p) => p.name === usePattern);
+      if (pattern) {
+        pattern.fn(newGrid, rows, cols);
+      }
+    } else {
+      // Random selection based on weighted probability
+      const totalWeight = allPatterns.reduce((sum, p) => sum + p.weight, 0);
+      const random = Math.random() * totalWeight;
+      let cumulativeWeight = 0;
+
+      for (const pattern of allPatterns) {
+        cumulativeWeight += pattern.weight;
+        if (random <= cumulativeWeight) {
+          pattern.fn(newGrid, rows, cols);
+          break;
+        }
       }
     }
-    setGrid(newGrid as CellType[][]);
+
+    setGrid(newGrid);
     setManualAntennas(new Map());
     setOptimizationResult(null);
+  };
+
+  // Pattern 1: Circular Clusters with High Density (25% chance)
+  const generateCircularClusters = (
+    grid: CellType[][],
+    rows: number,
+    cols: number
+  ) => {
+    const numClusters = Math.floor(Math.random() * 3) + 3; // 3-5 clusters
+    for (let i = 0; i < numClusters; i++) {
+      const centerX = Math.floor(Math.random() * cols);
+      const centerY = Math.floor(Math.random() * rows);
+      const radius = Math.floor(Math.random() * 8) + 5; // radius 5-12
+
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          const distance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+          if (distance <= radius && Math.random() < 0.6) {
+            grid[y][x] = "house";
+          }
+        }
+      }
+    }
+  };
+
+  // Pattern 2: Isolated Houses with Buffer Zones (20% chance)
+  const generateIsolatedHouses = (
+    grid: CellType[][],
+    rows: number,
+    cols: number
+  ) => {
+    const numHouses = Math.floor(rows * cols * 0.08); // 8% coverage
+    const minDistance = 8; // Minimum distance between houses
+
+    const placedHouses: { x: number; y: number }[] = [];
+
+    for (let i = 0; i < numHouses; i++) {
+      let attempts = 0;
+      let placed = false;
+
+      while (attempts < 50 && !placed) {
+        const x = Math.floor(Math.random() * cols);
+        const y = Math.floor(Math.random() * rows);
+
+        // Check distance from all placed houses
+        const tooClose = placedHouses.some(
+          (house) =>
+            Math.sqrt((x - house.x) ** 2 + (y - house.y) ** 2) < minDistance
+        );
+
+        if (!tooClose) {
+          grid[y][x] = "house";
+          placedHouses.push({ x, y });
+          placed = true;
+        }
+        attempts++;
+      }
+    }
+  };
+
+  // Pattern 3: Urban Grid Layout (15% chance)
+  const generateUrbanGrid = (
+    grid: CellType[][],
+    rows: number,
+    cols: number
+  ) => {
+    const blockSize = 6;
+    const streetWidth = 2;
+
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        const inStreetX = x % (blockSize + streetWidth) < streetWidth;
+        const inStreetY = y % (blockSize + streetWidth) < streetWidth;
+
+        // Place houses in blocks, leave streets empty
+        if (!inStreetX && !inStreetY && Math.random() < 0.7) {
+          grid[y][x] = "house";
+        }
+      }
+    }
+  };
+
+  // Pattern 4: Suburban Spread (15% chance)
+  const generateSuburbanSpread = (
+    grid: CellType[][],
+    rows: number,
+    cols: number
+  ) => {
+    const density = 0.12; // 12% base density
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        // Create clusters using Perlin-like noise simulation
+        const clusterX = Math.floor(x / 10);
+        const clusterY = Math.floor(y / 10);
+        const clusterSeed = (clusterX * 73856093) ^ (clusterY * 19349663);
+        const clusterDensity = ((clusterSeed % 100) / 100) * 0.3;
+
+        if (Math.random() < density + clusterDensity) {
+          grid[y][x] = "house";
+        }
+      }
+    }
+  };
+
+  // Pattern 5: Linear Streets (10% chance)
+  const generateLinearStreets = (
+    grid: CellType[][],
+    rows: number,
+    cols: number
+  ) => {
+    const numStreets = Math.floor(Math.random() * 4) + 3; // 3-6 streets
+
+    for (let i = 0; i < numStreets; i++) {
+      const isHorizontal = Math.random() < 0.5;
+      const position = isHorizontal
+        ? Math.floor(Math.random() * rows)
+        : Math.floor(Math.random() * cols);
+
+      if (isHorizontal) {
+        for (let x = 0; x < cols; x++) {
+          if (Math.random() < 0.5) {
+            // Houses on both sides of street
+            if (position > 0) grid[position - 1][x] = "house";
+            if (position < rows - 1) grid[position + 1][x] = "house";
+          }
+        }
+      } else {
+        for (let y = 0; y < rows; y++) {
+          if (Math.random() < 0.5) {
+            if (position > 0) grid[y][position - 1] = "house";
+            if (position < cols - 1) grid[y][position + 1] = "house";
+          }
+        }
+      }
+    }
+  };
+
+  // Pattern 6: Random Scattered (10% chance)
+  const generateRandomScattered = (
+    grid: CellType[][],
+    rows: number,
+    cols: number
+  ) => {
+    const houseProbability = rows * cols > 50000 ? 0.05 : 0.15;
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        if (Math.random() < houseProbability) {
+          grid[y][x] = "house";
+        }
+      }
+    }
+  };
+
+  // Pattern 7: Dense Downtown (5% chance)
+  const generateDenseDowntown = (
+    grid: CellType[][],
+    rows: number,
+    cols: number
+  ) => {
+    const centerX = Math.floor(cols / 2);
+    const centerY = Math.floor(rows / 2);
+    const maxRadius = Math.min(rows, cols) / 3;
+
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        const distance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+        const density = Math.max(0, 1 - distance / maxRadius); // Higher density near center
+
+        if (Math.random() < density * 0.9) {
+          grid[y][x] = "house";
+        }
+      }
+    }
+  };
+
+  // Pattern 8: Donut Ring
+  const generateDonutRing = (
+    grid: CellType[][],
+    rows: number,
+    cols: number
+  ) => {
+    const centerX = Math.floor(cols / 2);
+    const centerY = Math.floor(rows / 2);
+    const outerRadius = Math.min(rows, cols) / 3;
+    const innerRadius = outerRadius * 0.5;
+
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        const distance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+        if (
+          distance >= innerRadius &&
+          distance <= outerRadius &&
+          Math.random() < 0.7
+        ) {
+          grid[y][x] = "house";
+        }
+      }
+    }
+  };
+
+  // Pattern 9: Diagonal Lines
+  const generateDiagonalLines = (
+    grid: CellType[][],
+    rows: number,
+    cols: number
+  ) => {
+    const numLines = Math.floor(Math.random() * 3) + 4; // 4-6 diagonal lines
+    const spacing = Math.max(rows, cols) / numLines;
+
+    for (let line = 0; line < numLines; line++) {
+      const offset = line * spacing;
+      for (let i = 0; i < Math.max(rows, cols); i++) {
+        const x = Math.floor(i + offset);
+        const y = i;
+        if (x >= 0 && x < cols && y >= 0 && y < rows && Math.random() < 0.6) {
+          grid[y][x] = "house";
+          // Add houses adjacent to diagonal
+          if (Math.random() < 0.4) {
+            if (x + 1 < cols) grid[y][x + 1] = "house";
+            if (x - 1 >= 0) grid[y][x - 1] = "house";
+          }
+        }
+      }
+    }
+  };
+
+  // Pattern 10: Coastal Settlement
+  const generateCoastalSettlement = (
+    grid: CellType[][],
+    rows: number,
+    cols: number
+  ) => {
+    // Create a "coastline" on one side
+    const side = Math.floor(Math.random() * 4); // 0=top, 1=right, 2=bottom, 3=left
+    const coastDepth = Math.floor(Math.min(rows, cols) * 0.3);
+
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        let nearCoast = false;
+        if (side === 0) nearCoast = y < coastDepth;
+        else if (side === 1) nearCoast = x >= cols - coastDepth;
+        else if (side === 2) nearCoast = y >= rows - coastDepth;
+        else nearCoast = x < coastDepth;
+
+        if (nearCoast && Math.random() < 0.5) {
+          grid[y][x] = "house";
+        }
+      }
+    }
+  };
+
+  // Pattern 11: Mountain Valley
+  const generateMountainValley = (
+    grid: CellType[][],
+    rows: number,
+    cols: number
+  ) => {
+    const isHorizontal = Math.random() < 0.5;
+    const valleyWidth = Math.floor((isHorizontal ? rows : cols) * 0.3);
+    const valleyCenter = isHorizontal
+      ? Math.floor(rows / 2)
+      : Math.floor(cols / 2);
+
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        const distFromCenter = isHorizontal
+          ? Math.abs(y - valleyCenter)
+          : Math.abs(x - valleyCenter);
+
+        if (distFromCenter <= valleyWidth / 2 && Math.random() < 0.6) {
+          grid[y][x] = "house";
+        }
+      }
+    }
+  };
+
+  // Pattern 12: Checkerboard
+  const generateCheckerboard = (
+    grid: CellType[][],
+    rows: number,
+    cols: number
+  ) => {
+    const blockSize = 8;
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        const blockX = Math.floor(x / blockSize);
+        const blockY = Math.floor(y / blockSize);
+        const isFilledBlock = (blockX + blockY) % 2 === 0;
+
+        if (isFilledBlock && Math.random() < 0.5) {
+          grid[y][x] = "house";
+        }
+      }
+    }
+  };
+
+  // Pattern 13: Riverside Towns
+  const generateRiversideTowns = (
+    grid: CellType[][],
+    rows: number,
+    cols: number
+  ) => {
+    // Create a winding river through the middle
+    const isVertical = Math.random() < 0.5;
+    const riverPath: number[] = [];
+
+    if (isVertical) {
+      let currentX = Math.floor(cols / 2);
+      for (let y = 0; y < rows; y++) {
+        riverPath.push(currentX);
+        // River meanders
+        currentX += Math.floor(Math.random() * 3) - 1;
+        currentX = Math.max(2, Math.min(cols - 3, currentX));
+      }
+
+      // Place houses along riverbanks
+      for (let y = 0; y < rows; y++) {
+        const riverX = riverPath[y];
+        for (let offset = 2; offset <= 5; offset++) {
+          if (riverX - offset >= 0 && Math.random() < 0.4)
+            grid[y][riverX - offset] = "house";
+          if (riverX + offset < cols && Math.random() < 0.4)
+            grid[y][riverX + offset] = "house";
+        }
+      }
+    } else {
+      let currentY = Math.floor(rows / 2);
+      for (let x = 0; x < cols; x++) {
+        riverPath.push(currentY);
+        currentY += Math.floor(Math.random() * 3) - 1;
+        currentY = Math.max(2, Math.min(rows - 3, currentY));
+      }
+
+      for (let x = 0; x < cols; x++) {
+        const riverY = riverPath[x];
+        for (let offset = 2; offset <= 5; offset++) {
+          if (riverY - offset >= 0 && Math.random() < 0.4)
+            grid[riverY - offset][x] = "house";
+          if (riverY + offset < rows && Math.random() < 0.4)
+            grid[riverY + offset][x] = "house";
+        }
+      }
+    }
+  };
+
+  // Pattern 14: Highway Network
+  const generateHighwayNetwork = (
+    grid: CellType[][],
+    rows: number,
+    cols: number
+  ) => {
+    // Create major highways
+    const numHighways = Math.floor(Math.random() * 2) + 2; // 2-3 highways
+
+    for (let i = 0; i < numHighways; i++) {
+      const isHorizontal = i % 2 === 0;
+      const position = isHorizontal
+        ? Math.floor(((i + 1) * rows) / (numHighways + 1))
+        : Math.floor(((i + 1) * cols) / (numHighways + 1));
+
+      if (isHorizontal) {
+        // Horizontal highway with rest stops and nearby houses
+        for (let x = 0; x < cols; x++) {
+          if (x % 15 === 0) {
+            // Rest stop area
+            for (let dy = -3; dy <= 3; dy++) {
+              for (let dx = -3; dx <= 3; dx++) {
+                const ny = position + dy;
+                const nx = x + dx;
+                if (
+                  ny >= 0 &&
+                  ny < rows &&
+                  nx >= 0 &&
+                  nx < cols &&
+                  Math.random() < 0.6
+                ) {
+                  grid[ny][nx] = "house";
+                }
+              }
+            }
+          }
+        }
+      } else {
+        for (let y = 0; y < rows; y++) {
+          if (y % 15 === 0) {
+            for (let dy = -3; dy <= 3; dy++) {
+              for (let dx = -3; dx <= 3; dx++) {
+                const ny = y + dy;
+                const nx = position + dx;
+                if (
+                  ny >= 0 &&
+                  ny < rows &&
+                  nx >= 0 &&
+                  nx < cols &&
+                  Math.random() < 0.6
+                ) {
+                  grid[ny][nx] = "house";
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   };
 
   const handleClear = () => {
@@ -213,6 +737,7 @@ export default function Home() {
           target_coverage: targetCoverage,
           obstacles: obstacles,
           algorithm: algorithm,
+          allowed_antenna_types: Array.from(allowedAntennaTypes),
         }),
       });
 
@@ -284,6 +809,8 @@ export default function Home() {
           algorithm={algorithm}
           setAlgorithm={setAlgorithm}
           antennaSpecs={antennaSpecs}
+          allowedAntennaTypes={allowedAntennaTypes}
+          setAllowedAntennaTypes={setAllowedAntennaTypes}
           onOptimize={runOptimization}
           isOptimizing={isOptimizing}
         />
@@ -297,6 +824,8 @@ export default function Home() {
           setEditMode={setEditMode}
           selectedAntennaType={selectedAntennaType}
           setSelectedAntennaType={setSelectedAntennaType}
+          selectedPattern={selectedPattern}
+          setSelectedPattern={setSelectedPattern}
           onRandomize={handleRandomize}
           onClear={handleClear}
         />

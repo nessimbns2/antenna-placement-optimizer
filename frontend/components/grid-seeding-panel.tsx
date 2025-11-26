@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MapPin, Radio, RefreshCw, Trash2 } from "lucide-react";
+import { MapPin, Radio, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AntennaType } from "@/lib/api-config";
 
@@ -14,7 +14,8 @@ interface GridSeedingPanelProps {
   setEditMode: (m: "house" | "antenna") => void;
   selectedAntennaType: AntennaType;
   setSelectedAntennaType: (t: AntennaType) => void;
-  onRandomize: () => void;
+  selectedPattern: string;
+  setSelectedPattern: (p: string) => void;
   onClear: () => void;
 }
 
@@ -27,9 +28,27 @@ export function GridSeedingPanel({
   setEditMode,
   selectedAntennaType,
   setSelectedAntennaType,
-  onRandomize,
+  selectedPattern,
+  setSelectedPattern,
   onClear,
 }: GridSeedingPanelProps) {
+  const patterns = [
+    { value: "random", label: "🎲 Random Pattern" },
+    { value: "circular_clusters", label: "🔵 Circular Clusters" },
+    { value: "isolated_houses", label: "🏠 Isolated Houses" },
+    { value: "urban_grid", label: "🏙️ Urban Grid" },
+    { value: "suburban_spread", label: "🏡 Suburban Spread" },
+    { value: "linear_streets", label: "🛣️ Linear Streets" },
+    { value: "random_scattered", label: "✨ Random Scattered" },
+    { value: "dense_downtown", label: "🌆 Dense Downtown" },
+    { value: "donut_ring", label: "🍩 Donut Ring" },
+    { value: "diagonal_lines", label: "⚡ Diagonal Lines" },
+    { value: "coastal_settlement", label: "🏖️ Coastal Settlement" },
+    { value: "mountain_valley", label: "⛰️ Mountain Valley" },
+    { value: "checkerboard", label: "♟️ Checkerboard" },
+    { value: "riverside_towns", label: "🌊 Riverside Towns" },
+    { value: "highway_network", label: "🛤️ Highway Network" },
+  ];
   return (
     <div className="glass-panel p-4 rounded-xl w-full">
       <div className="flex items-center gap-2 mb-4">
@@ -39,7 +58,7 @@ export function GridSeedingPanel({
         </h2>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         {/* Grid Size */}
         <div className="space-y-2">
           <label className="text-sm text-slate-400 font-medium">
@@ -91,6 +110,29 @@ export function GridSeedingPanel({
               ⚠️ Very large grid may be slow
             </div>
           )}
+        </div>
+
+        {/* Pattern Selection */}
+        <div className="space-y-2">
+          <div className="text-sm text-slate-400 font-medium">
+            House Pattern
+          </div>
+          <select
+            value={selectedPattern}
+            onChange={(e) => setSelectedPattern(e.target.value)}
+            className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all text-slate-300"
+          >
+            {patterns.map((pattern) => (
+              <option key={pattern.value} value={pattern.value}>
+                {pattern.label}
+              </option>
+            ))}
+          </select>
+          <div className="text-xs text-slate-500">
+            {selectedPattern === "random"
+              ? "Random weighted selection"
+              : "Generate specific pattern"}
+          </div>
         </div>
 
         {/* Edit Mode */}
@@ -145,20 +187,12 @@ export function GridSeedingPanel({
         {/* Actions */}
         <div className="space-y-2">
           <div className="text-sm text-slate-400 font-medium">Actions</div>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={onRandomize}
-              className="py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2"
-            >
-              <RefreshCw size={14} /> Randomize
-            </button>
-            <button
-              onClick={onClear}
-              className="py-2 bg-slate-800 hover:bg-red-900/20 hover:text-red-400 text-slate-300 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2"
-            >
-              <Trash2 size={14} /> Clear
-            </button>
-          </div>
+          <button
+            onClick={onClear}
+            className="w-full py-2 bg-slate-800 hover:bg-red-900/20 hover:text-red-400 text-slate-300 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2"
+          >
+            <Trash2 size={14} /> Clear
+          </button>
         </div>
       </div>
     </div>

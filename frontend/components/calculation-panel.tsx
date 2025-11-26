@@ -13,6 +13,8 @@ interface CalculationPanelProps {
     a: "greedy" | "genetic" | "simulated-annealing" | "brute-force"
   ) => void;
   antennaSpecs: AntennaSpec[];
+  allowedAntennaTypes: Set<AntennaType>;
+  setAllowedAntennaTypes: (types: Set<AntennaType>) => void;
   onOptimize: () => void;
   isOptimizing: boolean;
 }
@@ -23,6 +25,8 @@ export function CalculationPanel({
   algorithm,
   setAlgorithm,
   antennaSpecs,
+  allowedAntennaTypes,
+  setAllowedAntennaTypes,
   onOptimize,
   isOptimizing,
 }: CalculationPanelProps) {
@@ -30,9 +34,6 @@ export function CalculationPanel({
   const [maxAntennas, setMaxAntennas] = useState<number | "">(50);
   const [useBudgetLimit, setUseBudgetLimit] = useState(false);
   const [useMaxAntennas, setUseMaxAntennas] = useState(false);
-  const [allowedAntennaTypes, setAllowedAntennaTypes] = useState<
-    Set<AntennaType>
-  >(new Set(["Femto", "Pico", "Micro", "Macro"]));
 
   const toggleAntennaType = (type: AntennaType) => {
     const newSet = new Set(allowedAntennaTypes);

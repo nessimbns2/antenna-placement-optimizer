@@ -16,7 +16,8 @@ class GreedyAlgorithm:
         height: int,
         target_coverage: float,
         antenna_specs: Dict[AntennaType, AntennaSpec],
-        houses: List[Tuple[int, int]]
+        houses: List[Tuple[int, int]],
+        allowed_antenna_types: List[AntennaType] | None = None
     ):
         """
         Initialize the greedy algorithm.
@@ -27,11 +28,17 @@ class GreedyAlgorithm:
             target_coverage: Target user coverage percentage (0-100)
             antenna_specs: Dictionary of antenna specifications
             houses: List of house coordinates (each has 20 users)
+            allowed_antenna_types: List of allowed antenna types (None = all types allowed)
         """
         self.width = width
         self.height = height
         self.target_coverage = target_coverage
-        self.antenna_specs = antenna_specs
+        # Filter antenna specs by allowed types
+        if allowed_antenna_types:
+            self.antenna_specs = {
+                k: v for k, v in antenna_specs.items() if k in allowed_antenna_types}
+        else:
+            self.antenna_specs = antenna_specs
         self.houses = set(houses)  # Houses where antennas cannot be placed
         self.covered_cells: Set[Tuple[int, int]] = set()
         self.covered_houses: Set[Tuple[int, int]] = set()
@@ -108,9 +115,13 @@ class GreedyAlgorithm:
                 0 <= y < self.height and
                 (x, y) not in self.houses)
 
-    def find_best_antenna_placement(self) -> Tuple[Tuple[int, int], AntennaType, float] | None:
+    def find_best_antenna_placement(self, need_capacity_only: bool = False) -> Tuple[Tuple[int, int], AntennaType, float] | None:
         """
         Find the best antenna placement considering cost efficiency.
+
+        Args:
+            need_capacity_only: If True, place antennas even if they don't cover new users
+                              (used when coverage is met but capacity is insufficient)
 
         Returns:
             Tuple of (position, antenna_type, cost_per_user) or None if no valid placement
@@ -132,13 +143,18 @@ class GreedyAlgorithm:
                     if any(ant['x'] == x and ant['y'] == y for ant in self.placed_antennas):
                         continue
 
-                    new_cells, new_users = self.count_new_coverage(
+                    _, new_users = self.count_new_coverage(
                         x, y, spec.radius)
 
-                    # Only consider positions that cover new users
-                    if new_users > 0:
-                        # Cost efficiency: cost per new user covered
-                        cost_efficiency = spec.cost / new_users
+                    # If we need capacity only, allow placing anywhere valid
+                    # Otherwise, only consider positions that cover new users
+                    if need_capacity_only or new_users > 0:
+                        # Cost efficiency: cost per new user covered (or just cost if capacity-only mode)
+                        if new_users > 0:
+                            cost_efficiency = spec.cost / new_users
+                        else:
+                            # In capacity-only mode, prefer high-capacity antennas
+                            cost_efficiency = spec.cost / spec.max_users
 
                         # Prefer lower cost per user (better efficiency)
                         if cost_efficiency < best_cost_efficiency:
@@ -169,17 +185,35 @@ class GreedyAlgorithm:
         iteration = 0
         max_iterations = self.width * self.height  # Prevent infinite loop
 
-        while len(self.covered_houses) * USERS_PER_HOUSE < target_users and iteration < max_iterations:
+        while iteration < max_iterations:
             iteration += 1
 
+            # Check if we've reached target coverage
+            users_covered = len(self.covered_houses) * USERS_PER_HOUSE
+            total_capacity = sum(ant["max_users"]
+                                 for ant in self.placed_antennas)
+
+            # Stop when both conditions are met:
+            # 1. Target coverage reached
+            # 2. We have enough capacity
+            coverage_met = users_covered >= target_users
+            capacity_sufficient = total_capacity >= users_covered
+
+            if coverage_met and capacity_sufficient:
+                # Both coverage and capacity goals met
+                break
+
             # Find best antenna placement
-            result = self.find_best_antenna_placement()
+            # If coverage is met but capacity is insufficient, allow placing anywhere
+            need_capacity_only = coverage_met and not capacity_sufficient
+            result = self.find_best_antenna_placement(
+                need_capacity_only=need_capacity_only)
 
             if result is None:
                 logger.warning(
                     f"Could not find valid position for new antenna. "
                     f"Placed {len(self.placed_antennas)} antennas. "
-                    f"Achieved {len(self.covered_houses) * USERS_PER_HOUSE}/{total_users} users."
+                    f"Achieved {users_covered}/{total_users} users, capacity: {total_capacity}"
                 )
                 break
 
@@ -211,12 +245,8 @@ class GreedyAlgorithm:
             logger.debug(
                 f"Placed {antenna_type.value} antenna #{len(self.placed_antennas)} at {position}, "
                 f"cost: ${spec.cost}, new users: {len(new_houses) * USERS_PER_HOUSE}, "
-                f"total coverage: {current_coverage:.1f}%"
+                f"total coverage: {current_coverage:.1f}%, capacity: {total_capacity}"
             )
-
-            # Check if we've reached target
-            if current_coverage >= self.target_coverage:
-                break
 
         # Calculate final statistics
         total_cells = self.width * self.height - len(self.houses)

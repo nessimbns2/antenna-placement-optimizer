@@ -50,6 +50,11 @@ class OptimizationRequest(BaseModel):
         default="greedy",
         description="Algorithm to use: greedy, genetic, simulated-annealing, brute-force"
     )
+    allowed_antenna_types: List[AntennaType] = Field(
+        default_factory=lambda: [
+            AntennaType.FEMTO, AntennaType.PICO, AntennaType.MICRO, AntennaType.MACRO],
+        description="List of allowed antenna types for optimization"
+    )
 
     @field_validator("algorithm")
     @classmethod
@@ -121,8 +126,7 @@ class OptimizationResponse(BaseModel):
     capacity_utilization: float = Field(
         ...,
         ge=0,
-        le=100,
-        description="Percentage of antenna capacity being used"
+        description="Percentage of antenna capacity being used (can exceed 100% if demand exceeds capacity)"
     )
     total_cost: int = Field(
         ...,
