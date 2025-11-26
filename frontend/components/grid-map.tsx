@@ -17,6 +17,12 @@ interface GridMapProps {
   coverageColor?: string;
   selectedAntennaType?: AntennaType;
   manualAntennas?: Map<string, AntennaType>;
+  antennaSpecs?: {
+    type: AntennaType;
+    radius: number;
+    max_users: number;
+    cost: number;
+  }[];
 }
 
 export function GridMap({
@@ -29,6 +35,7 @@ export function GridMap({
   coverageColor = "#10b981",
   selectedAntennaType = "Pico",
   manualAntennas = new Map(),
+  antennaSpecs = [],
 }: GridMapProps) {
   const cellSize = 40; // pixels per cell
 
@@ -96,7 +103,26 @@ export function GridMap({
 
   // Create merged coverage paths using SVG
   const coverageSVG = useMemo(() => {
-    if (!antennaData || antennaData.length === 0) return null;
+    // Collect all antennas (optimized + manual)
+    const allAntennas: AntennaPlacement[] = [...antennaData];
+
+    // Add manually placed antennas
+    manualAntennas.forEach((type, key) => {
+      const [r, c] = key.split(",").map(Number);
+      const spec = antennaSpecs.find((s) => s.type === type);
+      if (spec) {
+        allAntennas.push({
+          x: c,
+          y: r,
+          type: type,
+          radius: spec.radius,
+          max_users: spec.max_users,
+          cost: spec.cost,
+        });
+      }
+    });
+
+    if (allAntennas.length === 0) return null;
 
     // Create a coverage map
     const coverageMap: boolean[][] = Array.from({ length: rows }, () =>
@@ -104,7 +130,7 @@ export function GridMap({
     );
 
     // Mark all covered cells
-    antennaData.forEach((antenna) => {
+    allAntennas.forEach((antenna) => {
       const r = antenna.radius;
       for (let dy = -r; dy <= r; dy++) {
         for (let dx = -r; dx <= r; dx++) {
@@ -174,7 +200,29 @@ export function GridMap({
     }
 
     return paths;
-  }, [antennaData, rows, cols, cellSize]);
+  }, [antennaData, rows, cols, cellSize, manualAntennas, antennaSpecs]);
+
+  // Collect all antennas for rendering circles
+  const allAntennasForCircles = useMemo(() => {
+    const all: AntennaPlacement[] = [...antennaData];
+
+    manualAntennas.forEach((type, key) => {
+      const [r, c] = key.split(",").map(Number);
+      const spec = antennaSpecs.find((s) => s.type === type);
+      if (spec) {
+        all.push({
+          x: c,
+          y: r,
+          type: type,
+          radius: spec.radius,
+          max_users: spec.max_users,
+          cost: spec.cost,
+        });
+      }
+    });
+
+    return all;
+  }, [antennaData, manualAntennas, antennaSpecs]);
 
   return (
     <div className="relative glass-panel rounded-xl p-4">
@@ -220,7 +268,7 @@ export function GridMap({
             ))}
 
           {/* Draw individual antenna coverage circles with antenna colors */}
-          {antennaData.map((antenna, idx) => {
+          {allAntennasForCircles.map((antenna, idx) => {
             const styles = getAntennaStyles(antenna.type);
             const centerX = (antenna.x + 0.5) * cellSize;
             const centerY = (antenna.y + 0.5) * cellSize;
@@ -228,7 +276,7 @@ export function GridMap({
 
             return (
               <circle
-                key={`antenna-circle-${idx}`}
+                key={`antenna-circle-${antenna.x}-${antenna.y}`}
                 cx={centerX}
                 cy={centerY}
                 r={radius}

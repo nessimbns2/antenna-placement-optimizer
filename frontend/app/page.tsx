@@ -302,6 +302,7 @@ export default function Home() {
             coverageColor={coverageColor}
             selectedAntennaType={selectedAntennaType}
             manualAntennas={manualAntennas}
+            antennaSpecs={antennaSpecs}
           />
         </div>
       </div>
