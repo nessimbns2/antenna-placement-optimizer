@@ -23,6 +23,10 @@ interface ControlPanelProps {
   antennaSpecs: AntennaSpec[];
   editMode: "house" | "antenna";
   setEditMode: (m: "house" | "antenna") => void;
+  selectedAntennaType: AntennaType;
+  setSelectedAntennaType: (t: AntennaType) => void;
+  coverageColor: string;
+  setCoverageColor: (c: string) => void;
   algorithm: "greedy" | "genetic" | "simulated-annealing" | "brute-force";
   setAlgorithm: (
     a: "greedy" | "genetic" | "simulated-annealing" | "brute-force"
@@ -43,6 +47,10 @@ export function ControlPanel({
   antennaSpecs,
   editMode,
   setEditMode,
+  selectedAntennaType,
+  setSelectedAntennaType,
+  coverageColor,
+  setCoverageColor,
   algorithm,
   setAlgorithm,
   onRandomize,
@@ -138,30 +146,65 @@ export function ControlPanel({
           </div>
         </div>
 
-        <div className="space-y-2">
-          <div className="text-sm text-slate-400 font-medium">
-            Available Antenna Types
-          </div>
+        <div className="space-y-3">
           <div className="space-y-2">
-            {antennaSpecs.map((spec) => (
-              <div
-                key={spec.type}
-                className="p-2 bg-slate-900/50 rounded-lg border border-slate-800"
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-semibold text-slate-200 uppercase">
-                    {spec.type}
-                  </span>
-                  <span className="text-sm font-bold text-emerald-400">
-                    ${spec.cost.toLocaleString()}
-                  </span>
+            <div className="text-sm text-slate-400 font-medium">
+              Select Antenna Type
+            </div>
+            <select
+              value={selectedAntennaType}
+              onChange={(e) =>
+                setSelectedAntennaType(e.target.value as AntennaType)
+              }
+              className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all text-slate-300"
+            >
+              <option value="Femto">Femto - $1k (r:1, 20 users)</option>
+              <option value="Pico">Pico - $5k (r:6, 100 users)</option>
+              <option value="Micro">Micro - $12k (r:40, 500 users)</option>
+              <option value="Macro">Macro - $25k (r:100, 2000 users)</option>
+            </select>
+          </div>
+
+          <details className="group">
+            <summary className="text-sm text-slate-400 font-medium cursor-pointer hover:text-slate-300 transition-colors">
+              Available Antenna Types ▾
+            </summary>
+            <div className="space-y-2 mt-2">
+              {antennaSpecs.map((spec) => (
+                <div
+                  key={spec.type}
+                  className="p-2 bg-slate-900/50 rounded-lg border border-slate-800"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-semibold text-slate-200 uppercase">
+                      {spec.type}
+                    </span>
+                    <span className="text-sm font-bold text-emerald-400">
+                      ${spec.cost.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-500 space-y-0.5">
+                    <div>Coverage: {spec.radius} cells radius</div>
+                    <div>Capacity: {spec.max_users} users</div>
+                  </div>
                 </div>
-                <div className="text-xs text-slate-500 space-y-0.5">
-                  <div>Coverage: {spec.radius} cells radius</div>
-                  <div>Capacity: {spec.max_users} users</div>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          </details>
+
+          <div className="space-y-2 pt-2">
+            <div className="text-sm text-slate-400 font-medium">
+              Coverage Color
+            </div>
+            <div className="flex gap-2 items-center">
+              <input
+                type="color"
+                value={coverageColor}
+                onChange={(e) => setCoverageColor(e.target.value)}
+                className="w-12 h-10 rounded-lg cursor-pointer bg-slate-950/50 border border-slate-800"
+              />
+              <span className="text-xs text-slate-500">{coverageColor}</span>
+            </div>
           </div>
         </div>
 

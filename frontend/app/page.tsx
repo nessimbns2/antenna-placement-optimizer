@@ -14,14 +14,21 @@ import {
 const DEFAULT_ROWS = 15;
 const DEFAULT_COLS = 20;
 const COST_PER_ANTENNA = 5000;
-const USERS_PER_HOUSE = 10;
+const USERS_PER_HOUSE = 20;
 
 export default function Home() {
   const [rows, setRows] = useState(DEFAULT_ROWS);
   const [cols, setCols] = useState(DEFAULT_COLS);
   const [grid, setGrid] = useState<CellType[][]>([]);
+  // Store antenna type for manually placed antennas
+  const [manualAntennas, setManualAntennas] = useState<
+    Map<string, AntennaType>
+  >(new Map());
   const [targetCoverage, setTargetCoverage] = useState(95);
   const [editMode, setEditMode] = useState<"house" | "antenna">("house");
+  const [selectedAntennaType, setSelectedAntennaType] =
+    useState<AntennaType>("Pico");
+  const [coverageColor, setCoverageColor] = useState("#10b981"); // emerald-500
   const [algorithm, setAlgorithm] = useState<
     "greedy" | "genetic" | "simulated-annealing" | "brute-force"
   >("greedy");
@@ -111,7 +118,24 @@ export default function Home() {
     if (editMode === "house") {
       newGrid[r][c] = current === "house" ? "empty" : "house";
     } else {
-      newGrid[r][c] = current === "antenna" ? "empty" : "antenna";
+      const key = `${r},${c}`;
+      if (current === "antenna") {
+        // Remove antenna
+        newGrid[r][c] = "empty";
+        setManualAntennas((prev) => {
+          const updated = new Map(prev);
+          updated.delete(key);
+          return updated;
+        });
+      } else {
+        // Place antenna with current selected type
+        newGrid[r][c] = "antenna";
+        setManualAntennas((prev) => {
+          const updated = new Map(prev);
+          updated.set(key, selectedAntennaType);
+          return updated;
+        });
+      }
     }
     setGrid(newGrid);
   };
@@ -129,6 +153,8 @@ export default function Home() {
       }
     }
     setGrid(newGrid as CellType[][]);
+    setManualAntennas(new Map());
+    setOptimizationResult(null);
   };
 
   const handleClear = () => {
@@ -137,6 +163,8 @@ export default function Home() {
         .fill(null)
         .map(() => Array(cols).fill("empty")) as CellType[][]
     );
+    setManualAntennas(new Map());
+    setOptimizationResult(null);
   };
 
   const runOptimization = async () => {
@@ -251,6 +279,10 @@ export default function Home() {
           antennaSpecs={antennaSpecs}
           editMode={editMode}
           setEditMode={setEditMode}
+          selectedAntennaType={selectedAntennaType}
+          setSelectedAntennaType={setSelectedAntennaType}
+          coverageColor={coverageColor}
+          setCoverageColor={setCoverageColor}
           algorithm={algorithm}
           setAlgorithm={setAlgorithm}
           onRandomize={handleRandomize}
@@ -267,6 +299,9 @@ export default function Home() {
             onCellClick={handleCellClick}
             coverage={coverage}
             antennaData={optimizationResult?.antennas}
+            coverageColor={coverageColor}
+            selectedAntennaType={selectedAntennaType}
+            manualAntennas={manualAntennas}
           />
         </div>
       </div>

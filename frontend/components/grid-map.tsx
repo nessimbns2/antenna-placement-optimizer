@@ -1,102 +1,306 @@
 "use client";
 
-import React from 'react';
-import { cn } from '@/lib/utils';
-import { House, Radio, Signal, Waves } from 'lucide-react';
-import { AntennaType, AntennaPlacement } from '@/lib/api-config';
+import React, { useMemo } from "react";
+import { cn } from "@/lib/utils";
+import { House, Radio, Signal, Waves, Antenna } from "lucide-react";
+import { AntennaType, AntennaPlacement } from "@/lib/api-config";
 
-export type CellType = 'empty' | 'house' | 'antenna' | 'covered';
+export type CellType = "empty" | "house" | "antenna" | "covered";
 
 interface GridMapProps {
-    rows: number;
-    cols: number;
-    grid: CellType[][];
-    onCellClick: (row: number, col: number) => void;
-    coverage: boolean[][];
-    antennaData?: AntennaPlacement[];
+  rows: number;
+  cols: number;
+  grid: CellType[][];
+  onCellClick: (row: number, col: number) => void;
+  coverage: boolean[][];
+  antennaData?: AntennaPlacement[];
+  coverageColor?: string;
+  selectedAntennaType?: AntennaType;
+  manualAntennas?: Map<string, AntennaType>;
 }
 
-export function GridMap({ rows, cols, grid, onCellClick, coverage, antennaData = [] }: GridMapProps) {
-    // Find antenna at specific position
-    const getAntennaAtPosition = (row: number, col: number): AntennaPlacement | undefined => {
-        return antennaData.find(ant => ant.y === row && ant.x === col);
-    };
+export function GridMap({
+  rows,
+  cols,
+  grid,
+  onCellClick,
+  coverage,
+  antennaData = [],
+  coverageColor = "#10b981",
+  selectedAntennaType = "Pico",
+  manualAntennas = new Map(),
+}: GridMapProps) {
+  const cellSize = 40; // pixels per cell
 
-    // Get antenna styling based on type
-    const getAntennaStyles = (type: AntennaType) => {
-        switch (type) {
-            case 'small':
-                return {
-                    bg: 'bg-cyan-500',
-                    border: 'border-cyan-400',
-                    shadow: 'shadow-[0_0_20px_rgba(6,182,212,0.7)]',
-                    glow: 'shadow-[0_0_30px_rgba(6,182,212,0.5),0_0_40px_rgba(6,182,212,0.3)]',
-                    text: 'text-cyan-100'
-                };
-            case 'medium':
-                return {
-                    bg: 'bg-blue-500',
-                    border: 'border-blue-400',
-                    shadow: 'shadow-[0_0_25px_rgba(59,130,246,0.7)]',
-                    glow: 'shadow-[0_0_35px_rgba(59,130,246,0.5),0_0_45px_rgba(59,130,246,0.3)]',
-                    text: 'text-blue-100'
-                };
-            case 'large':
-                return {
-                    bg: 'bg-purple-500',
-                    border: 'border-purple-400',
-                    shadow: 'shadow-[0_0_30px_rgba(168,85,247,0.8)]',
-                    glow: 'shadow-[0_0_40px_rgba(168,85,247,0.6),0_0_50px_rgba(168,85,247,0.4)]',
-                    text: 'text-purple-100'
-                };
-        }
-    };
+  // Find antenna at specific position
+  const getAntennaAtPosition = (
+    row: number,
+    col: number
+  ): AntennaPlacement | undefined => {
+    return antennaData.find((ant) => ant.y === row && ant.x === col);
+  };
 
-    // Get antenna icon based on type
-    const getAntennaIcon = (type: AntennaType) => {
-        switch (type) {
-            case 'small':
-                return <Radio size={16} strokeWidth={2.5} />;
-            case 'medium':
-                return <Signal size={18} strokeWidth={2.5} />;
-            case 'large':
-                return <Waves size={20} strokeWidth={2.5} />;
-        }
-    };
+  // Get antenna styling based on type
+  const getAntennaStyles = (type: AntennaType) => {
+    switch (type) {
+      case "Femto":
+        return {
+          bg: "bg-cyan-500",
+          border: "border-cyan-400",
+          shadow: "shadow-[0_0_20px_rgba(6,182,212,0.7)]",
+          glow: "shadow-[0_0_30px_rgba(6,182,212,0.5),0_0_40px_rgba(6,182,212,0.3)]",
+          text: "text-cyan-100",
+          color: "#06b6d4",
+        };
+      case "Pico":
+        return {
+          bg: "bg-blue-500",
+          border: "border-blue-400",
+          shadow: "shadow-[0_0_25px_rgba(59,130,246,0.7)]",
+          glow: "shadow-[0_0_35px_rgba(59,130,246,0.5),0_0_45px_rgba(59,130,246,0.3)]",
+          text: "text-blue-100",
+          color: "#3b82f6",
+        };
+      case "Micro":
+        return {
+          bg: "bg-purple-500",
+          border: "border-purple-400",
+          shadow: "shadow-[0_0_30px_rgba(168,85,247,0.8)]",
+          glow: "shadow-[0_0_40px_rgba(168,85,247,0.6),0_0_50px_rgba(168,85,247,0.4)]",
+          text: "text-purple-100",
+          color: "#a855f7",
+        };
+      case "Macro":
+        return {
+          bg: "bg-pink-500",
+          border: "border-pink-400",
+          shadow: "shadow-[0_0_35px_rgba(236,72,153,0.8)]",
+          glow: "shadow-[0_0_45px_rgba(236,72,153,0.6),0_0_55px_rgba(236,72,153,0.4)]",
+          text: "text-pink-100",
+          color: "#ec4899",
+        };
+    }
+  }; // Get antenna icon based on type
+  const getAntennaIcon = (type: AntennaType) => {
+    switch (type) {
+      case "Femto":
+        return <Radio size={14} strokeWidth={2.5} />;
+      case "Pico":
+        return <Signal size={16} strokeWidth={2.5} />;
+      case "Micro":
+        return <Waves size={18} strokeWidth={2.5} />;
+      case "Macro":
+        return <Antenna size={20} strokeWidth={2.5} />;
+    }
+  };
 
-    return (
-        <div
-            className="grid gap-1 p-4 glass-panel rounded-xl overflow-auto max-h-[70vh] max-w-full"
-            style={{
-                gridTemplateColumns: `repeat(${cols}, minmax(2rem, 1fr))`,
-            }}
-        >
-            {grid.map((row, r) => (
-                row.map((cell, c) => {
-                    const isCovered = coverage[r]?.[c];
-                    const antennaInfo = cell === 'antenna' ? getAntennaAtPosition(r, c) : undefined;
-                    const antennaStyles = antennaInfo ? getAntennaStyles(antennaInfo.type) : null;
-                    
-                    return (
-                        <div
-                            key={`${r}-${c}`}
-                            onClick={() => onCellClick(r, c)}
-                            className={cn(
-                                "aspect-square rounded-md flex items-center justify-center cursor-pointer transition-all duration-300 border border-slate-800/50 hover:border-slate-600 relative",
-                                cell === 'empty' && isCovered && "bg-emerald-900/20 border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.1)]",
-                                cell === 'empty' && !isCovered && "bg-slate-900/50 hover:bg-slate-800",
-                                cell === 'house' && isCovered && "bg-emerald-500/20 border-emerald-500 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)]",
-                                cell === 'house' && !isCovered && "bg-rose-500/20 border-rose-500 text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.4)]",
-                                cell === 'antenna' && antennaStyles && `${antennaStyles.bg} ${antennaStyles.border} ${antennaStyles.glow} ${antennaStyles.text} z-10 scale-110 animate-pulse`
-                            )}
-                        >
-                            {cell === 'house' && <House size={16} strokeWidth={2.5} />}
-                            {cell === 'antenna' && antennaInfo && getAntennaIcon(antennaInfo.type)}
-                            {cell === 'empty' && isCovered && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/40" />}
-                        </div>
-                    );
-                })
-            ))}
-        </div>
+  // Create merged coverage paths using SVG
+  const coverageSVG = useMemo(() => {
+    if (!antennaData || antennaData.length === 0) return null;
+
+    // Create a coverage map
+    const coverageMap: boolean[][] = Array.from({ length: rows }, () =>
+      Array.from({ length: cols }, () => false)
     );
+
+    // Mark all covered cells
+    antennaData.forEach((antenna) => {
+      const r = antenna.radius;
+      for (let dy = -r; dy <= r; dy++) {
+        for (let dx = -r; dx <= r; dx++) {
+          if (dx * dx + dy * dy <= r * r) {
+            const targetY = antenna.y + dy;
+            const targetX = antenna.x + dx;
+            if (
+              targetY >= 0 &&
+              targetY < rows &&
+              targetX >= 0 &&
+              targetX < cols
+            ) {
+              coverageMap[targetY][targetX] = true;
+            }
+          }
+        }
+      }
+    });
+
+    // Create path for merged coverage areas
+    const paths: string[] = [];
+    const visited: boolean[][] = Array.from({ length: rows }, () =>
+      Array.from({ length: cols }, () => false)
+    );
+
+    const floodFill = (startY: number, startX: number): [number, number][] => {
+      const stack: [number, number][] = [[startY, startX]];
+      const region: [number, number][] = [];
+
+      while (stack.length > 0) {
+        const [y, x] = stack.pop()!;
+
+        if (y < 0 || y >= rows || x < 0 || x >= cols) continue;
+        if (visited[y][x] || !coverageMap[y][x]) continue;
+
+        visited[y][x] = true;
+        region.push([y, x]);
+
+        // Check 4 neighbors
+        stack.push([y - 1, x], [y + 1, x], [y, x - 1], [y, x + 1]);
+      }
+
+      return region;
+    };
+
+    // Find all connected regions
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        if (coverageMap[y][x] && !visited[y][x]) {
+          const region = floodFill(y, x);
+          if (region.length > 0) {
+            // Create a smooth path around this region
+            const minX = Math.min(...region.map(([_, x]) => x));
+            const maxX = Math.max(...region.map(([_, x]) => x));
+            const minY = Math.min(...region.map(([y, _]) => y));
+            const maxY = Math.max(...region.map(([y, _]) => y));
+
+            const padding = 0.4;
+            const rect = `M ${minX * cellSize - padding * cellSize} ${minY * cellSize - padding * cellSize} 
+                                     L ${(maxX + 1) * cellSize + padding * cellSize} ${minY * cellSize - padding * cellSize}
+                                     L ${(maxX + 1) * cellSize + padding * cellSize} ${(maxY + 1) * cellSize + padding * cellSize}
+                                     L ${minX * cellSize - padding * cellSize} ${(maxY + 1) * cellSize + padding * cellSize} Z`;
+            paths.push(rect);
+          }
+        }
+      }
+    }
+
+    return paths;
+  }, [antennaData, rows, cols, cellSize]);
+
+  return (
+    <div className="relative glass-panel rounded-xl p-4">
+      <div
+        className="relative"
+        style={{
+          width: cols * cellSize,
+          height: rows * cellSize,
+        }}
+      >
+        {/* SVG Overlay for coverage circles */}
+        <svg
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            width: cols * cellSize,
+            height: rows * cellSize,
+          }}
+        >
+          <defs>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+              <feMerge>
+                <feMergeNode in="coloredBlur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          {/* Draw merged coverage areas - white with 50% transparency */}
+          {coverageSVG &&
+            coverageSVG.map((path, idx) => (
+              <path
+                key={idx}
+                d={path}
+                fill="white"
+                fillOpacity="0.5"
+                stroke="white"
+                strokeWidth="2"
+                strokeOpacity="0.5"
+                filter="url(#glow)"
+                rx="8"
+              />
+            ))}
+
+          {/* Draw individual antenna coverage circles with antenna colors */}
+          {antennaData.map((antenna, idx) => {
+            const styles = getAntennaStyles(antenna.type);
+            const centerX = (antenna.x + 0.5) * cellSize;
+            const centerY = (antenna.y + 0.5) * cellSize;
+            const radius = antenna.radius * cellSize;
+
+            return (
+              <circle
+                key={`antenna-circle-${idx}`}
+                cx={centerX}
+                cy={centerY}
+                r={radius}
+                fill={styles.color}
+                fillOpacity="0.1"
+                stroke={styles.color}
+                strokeWidth="2"
+                strokeOpacity="0.6"
+                strokeDasharray="5,5"
+                filter="url(#glow)"
+              />
+            );
+          })}
+        </svg>
+
+        {/* Grid cells */}
+        <div
+          className="grid gap-1"
+          style={{
+            gridTemplateColumns: `repeat(${cols}, ${cellSize}px)`,
+            gridTemplateRows: `repeat(${rows}, ${cellSize}px)`,
+          }}
+        >
+          {grid.map((row, r) =>
+            row.map((cell, c) => {
+              const isCovered = coverage[r]?.[c];
+              const antennaInfo =
+                cell === "antenna" ? getAntennaAtPosition(r, c) : undefined;
+
+              // Use antenna info from optimization, or manual placement map, or fallback to selected type
+              const key = `${r},${c}`;
+              const antennaType =
+                antennaInfo?.type ||
+                (cell === "antenna" ? manualAntennas.get(key) : undefined);
+              const antennaStyles = antennaType
+                ? getAntennaStyles(antennaType)
+                : null;
+
+              return (
+                <div
+                  key={`${r}-${c}`}
+                  onClick={() => onCellClick(r, c)}
+                  className={cn(
+                    "rounded-md flex items-center justify-center cursor-pointer transition-all duration-300 border border-slate-800/50 hover:border-slate-600 relative",
+                    cell === "empty" &&
+                      !isCovered &&
+                      "bg-slate-900/50 hover:bg-slate-800",
+                    cell === "house" &&
+                      isCovered &&
+                      "bg-emerald-500/20 border-emerald-500 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)]",
+                    cell === "house" &&
+                      !isCovered &&
+                      "bg-rose-500/20 border-rose-500 text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.4)]",
+                    cell === "antenna" &&
+                      antennaStyles &&
+                      `${antennaStyles.bg} ${antennaStyles.border} ${antennaStyles.glow} ${antennaStyles.text} z-10 scale-110`
+                  )}
+                  style={{
+                    width: `${cellSize}px`,
+                    height: `${cellSize}px`,
+                  }}
+                >
+                  {cell === "house" && <House size={16} strokeWidth={2.5} />}
+                  {cell === "antenna" &&
+                    antennaType &&
+                    getAntennaIcon(antennaType)}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }

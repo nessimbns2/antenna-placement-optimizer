@@ -9,7 +9,7 @@ export const API_CONFIG = {
 };
 
 // Type definitions matching backend models
-export type AntennaType = 'small' | 'medium' | 'large';
+export type AntennaType = 'Macro' | 'Micro' | 'Pico' | 'Femto';
 
 export interface AntennaSpec {
     type: AntennaType;

@@ -7,8 +7,8 @@ from typing import Dict
 
 from app.config import settings
 from app.models import (
-    OptimizationRequest, 
-    OptimizationResponse, 
+    OptimizationRequest,
+    OptimizationResponse,
     ErrorResponse,
     AntennaPlacement,
     ANTENNA_SPECS
@@ -73,11 +73,11 @@ async def get_antenna_types():
                 "radius": spec.radius,
                 "max_users": spec.max_users,
                 "cost": spec.cost,
-                "description": f"Coverage radius: {spec.radius}, Max users: {spec.max_users}, Cost: ${spec.cost}"
+                "description": f"Coverage radius: {spec.radius} cells, Max users: {spec.max_users}, Cost: ${spec.cost:,}"
             }
             for spec in ANTENNA_SPECS.values()
         ],
-        "users_per_house": 10
+        "users_per_house": 20
     }
 
 
@@ -94,24 +94,24 @@ async def get_antenna_types():
 async def optimize_antenna_placement(request: OptimizationRequest) -> OptimizationResponse:
     """
     Optimize antenna placement on a grid.
-    
+
     Args:
         request: Optimization request with grid parameters
-        
+
     Returns:
         Optimization response with antenna positions and coverage
-        
+
     Raises:
         HTTPException: If optimization fails
     """
     start_time = time.time()
-    
+
     logger.info(
         f"Received optimization request: algorithm={request.algorithm}, "
         f"grid={request.width}x{request.height}, "
         f"target_coverage={request.target_coverage}%"
     )
-    
+
     try:
         # Check if houses are within grid bounds
         for obs_x, obs_y in request.obstacles:
@@ -120,7 +120,7 @@ async def optimize_antenna_placement(request: OptimizationRequest) -> Optimizati
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"House at ({obs_x}, {obs_y}) is outside grid bounds"
                 )
-        
+
         # Route to appropriate algorithm
         if request.algorithm == "greedy":
             algorithm = GreedyAlgorithm(
@@ -137,9 +137,9 @@ async def optimize_antenna_placement(request: OptimizationRequest) -> Optimizati
                 status_code=status.HTTP_501_NOT_IMPLEMENTED,
                 detail=f"Algorithm '{request.algorithm}' is not yet implemented. Currently only 'greedy' is available."
             )
-        
+
         execution_time_ms = (time.time() - start_time) * 1000
-        
+
         # Create antenna placements with details from result
         antenna_placements = [
             AntennaPlacement(
@@ -152,20 +152,21 @@ async def optimize_antenna_placement(request: OptimizationRequest) -> Optimizati
             )
             for ant in result["antennas"]
         ]
-        
+
         response = OptimizationResponse(
             antennas=antenna_placements,
             coverage_percentage=round(result["coverage_percentage"], 2),
             users_covered=result["users_covered"],
             total_users=result["total_users"],
-            user_coverage_percentage=round(result["user_coverage_percentage"], 2),
+            user_coverage_percentage=round(
+                result["user_coverage_percentage"], 2),
             total_capacity=result["total_capacity"],
             capacity_utilization=round(result["capacity_utilization"], 2),
             total_cost=result["total_cost"],
             algorithm=request.algorithm,
             execution_time_ms=round(execution_time_ms, 2)
         )
-        
+
         logger.info(
             f"Optimization complete: {len(antenna_placements)} antennas, "
             f"${result['total_cost']} total cost, "
@@ -173,9 +174,9 @@ async def optimize_antenna_placement(request: OptimizationRequest) -> Optimizati
             f"{result['users_covered']}/{result['total_users']} users ({result['user_coverage_percentage']:.2f}%), "
             f"{execution_time_ms:.2f}ms"
         )
-        
+
         return response
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -201,7 +202,7 @@ async def global_exception_handler(request, exc):
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     logger.info(f"Starting server on {settings.host}:{settings.port}")
     uvicorn.run(
         "app.main:app",
