@@ -14,7 +14,6 @@ interface GridMapProps {
   onCellClick: (row: number, col: number) => void;
   coverage: boolean[][];
   antennaData?: AntennaPlacement[];
-  coverageColor?: string;
   selectedAntennaType?: AntennaType;
   manualAntennas?: Map<string, AntennaType>;
   antennaSpecs?: {
@@ -32,7 +31,6 @@ export function GridMap({
   onCellClick,
   coverage,
   antennaData = [],
-  coverageColor = "#10b981",
   selectedAntennaType = "Pico",
   manualAntennas = new Map(),
   antennaSpecs = [],

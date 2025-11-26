@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { GridMap, CellType } from "@/components/grid-map";
 import { CanvasGrid } from "@/components/canvas-grid";
-import { ControlPanel } from "@/components/control-panel";
+import { GridSeedingPanel } from "@/components/grid-seeding-panel";
+import { CalculationPanel } from "@/components/calculation-panel";
 import { StatsCard } from "@/components/stats-card";
 import {
   API_CONFIG,
@@ -30,7 +31,6 @@ export default function Home() {
   const [editMode, setEditMode] = useState<"house" | "antenna">("house");
   const [selectedAntennaType, setSelectedAntennaType] =
     useState<AntennaType>("Pico");
-  const [coverageColor, setCoverageColor] = useState("#10b981"); // emerald-500
   const [algorithm, setAlgorithm] = useState<
     "greedy" | "genetic" | "simulated-annealing" | "brute-force"
   >("greedy");
@@ -278,26 +278,27 @@ export default function Home() {
           optimizationResult={optimizationResult}
         />
 
-        <ControlPanel
+        <CalculationPanel
+          targetCoverage={targetCoverage}
+          setTargetCoverage={setTargetCoverage}
+          algorithm={algorithm}
+          setAlgorithm={setAlgorithm}
+          antennaSpecs={antennaSpecs}
+          onOptimize={runOptimization}
+          isOptimizing={isOptimizing}
+        />
+
+        <GridSeedingPanel
           rows={rows}
           cols={cols}
           setRows={setRows}
           setCols={setCols}
-          targetCoverage={targetCoverage}
-          setTargetCoverage={setTargetCoverage}
-          antennaSpecs={antennaSpecs}
           editMode={editMode}
           setEditMode={setEditMode}
           selectedAntennaType={selectedAntennaType}
           setSelectedAntennaType={setSelectedAntennaType}
-          coverageColor={coverageColor}
-          setCoverageColor={setCoverageColor}
-          algorithm={algorithm}
-          setAlgorithm={setAlgorithm}
           onRandomize={handleRandomize}
           onClear={handleClear}
-          onOptimize={runOptimization}
-          isOptimizing={isOptimizing}
         />
 
         <div className="w-full">
@@ -320,7 +321,6 @@ export default function Home() {
               onCellClick={handleCellClick}
               coverage={coverage}
               antennaData={optimizationResult?.antennas}
-              coverageColor={coverageColor}
               selectedAntennaType={selectedAntennaType}
               manualAntennas={manualAntennas}
               antennaSpecs={antennaSpecs}
