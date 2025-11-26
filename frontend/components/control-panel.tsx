@@ -101,7 +101,15 @@ export function ControlPanel({
               <input
                 type="number"
                 value={rows}
-                onChange={(e) => setRows(Number(e.target.value))}
+                onChange={(e) => {
+                  const val = Math.min(
+                    1000,
+                    Math.max(1, Number(e.target.value) || 1)
+                  );
+                  setRows(val);
+                }}
+                min="1"
+                max="1000"
                 className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
               />
             </div>
@@ -110,11 +118,29 @@ export function ControlPanel({
               <input
                 type="number"
                 value={cols}
-                onChange={(e) => setCols(Number(e.target.value))}
+                onChange={(e) => {
+                  const val = Math.min(
+                    1000,
+                    Math.max(1, Number(e.target.value) || 1)
+                  );
+                  setCols(val);
+                }}
+                min="1"
+                max="1000"
                 className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
               />
             </div>
           </div>
+          {rows * cols > 10000 && (
+            <div className="text-xs text-amber-400 mt-1">
+              ⚡ Large grid: Using Canvas rendering
+            </div>
+          )}
+          {rows * cols > 100000 && (
+            <div className="text-xs text-orange-400 mt-1">
+              ⚠️ Very large grid may be slow
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">

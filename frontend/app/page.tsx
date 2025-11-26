@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { GridMap, CellType } from "@/components/grid-map";
+import { CanvasGrid } from "@/components/canvas-grid";
 import { ControlPanel } from "@/components/control-panel";
 import { StatsCard } from "@/components/stats-card";
 import {
@@ -13,6 +14,7 @@ import {
 
 const DEFAULT_ROWS = 15;
 const DEFAULT_COLS = 20;
+const MAX_GRID_SIZE = 1000;
 const COST_PER_ANTENNA = 5000;
 const USERS_PER_HOUSE = 20;
 
@@ -60,10 +62,18 @@ export default function Home() {
 
   // Initialize grid
   useEffect(() => {
+    // Validate grid size
+    const validRows = Math.min(Math.max(1, rows), MAX_GRID_SIZE);
+    const validCols = Math.min(Math.max(1, cols), MAX_GRID_SIZE);
+
+    if (validRows !== rows) setRows(validRows);
+    if (validCols !== cols) setCols(validCols);
+
     setGrid((prev) => {
-      const newGrid = Array(rows)
-        .fill(null)
-        .map(() => Array(cols).fill("empty"));
+      const newGrid = new Array(validRows);
+      for (let i = 0; i < validRows; i++) {
+        newGrid[i] = new Array(validCols).fill("empty");
+      }
       return newGrid as CellType[][];
     });
     setOptimizationResult(null);
@@ -72,19 +82,20 @@ export default function Home() {
   // Calculate coverage based on optimization result
   const calculateCoverage = useCallback(() => {
     if (!optimizationResult || grid.length === 0) {
-      setCoverage(
-        Array(grid.length)
-          .fill(null)
-          .map(() => Array(grid[0]?.length || 0).fill(false))
-      );
+      const emptyRows = new Array(grid.length);
+      for (let i = 0; i < grid.length; i++) {
+        emptyRows[i] = new Array(grid[0]?.length || 0).fill(false);
+      }
+      setCoverage(emptyRows);
       return;
     }
 
-    const newCoverage = Array(grid.length)
-      .fill(null)
-      .map(() => Array(grid[0]?.length || 0).fill(false));
+    const newCoverage = new Array(grid.length);
+    for (let i = 0; i < grid.length; i++) {
+      newCoverage[i] = new Array(grid[0].length).fill(false);
+    }
 
-    optimizationResult.antennas.forEach((antenna) => {
+    for (const antenna of optimizationResult.antennas) {
       const r = antenna.radius;
       for (let i = -r; i <= r; i++) {
         for (let j = -r; j <= r; j++) {
@@ -102,7 +113,7 @@ export default function Home() {
           }
         }
       }
-    });
+    }
 
     setCoverage(newCoverage);
   }, [grid, optimizationResult]);
@@ -141,15 +152,13 @@ export default function Home() {
   };
 
   const handleRandomize = () => {
-    const newGrid = Array(rows)
-      .fill(null)
-      .map(() => Array(cols).fill("empty"));
+    const newGrid = new Array(rows);
+    const houseProbability = rows * cols > 50000 ? 0.05 : 0.15; // Lower density for large grids
+
     for (let r = 0; r < rows; r++) {
+      newGrid[r] = new Array(cols);
       for (let c = 0; c < cols; c++) {
-        if (Math.random() < 0.15) {
-          // 15% chance of house
-          newGrid[r][c] = "house";
-        }
+        newGrid[r][c] = Math.random() < houseProbability ? "house" : "empty";
       }
     }
     setGrid(newGrid as CellType[][]);
@@ -158,11 +167,11 @@ export default function Home() {
   };
 
   const handleClear = () => {
-    setGrid(
-      Array(rows)
-        .fill(null)
-        .map(() => Array(cols).fill("empty")) as CellType[][]
-    );
+    const newGrid = new Array(rows);
+    for (let i = 0; i < rows; i++) {
+      newGrid[i] = new Array(cols).fill("empty");
+    }
+    setGrid(newGrid as CellType[][]);
     setManualAntennas(new Map());
     setOptimizationResult(null);
   };
@@ -292,18 +301,31 @@ export default function Home() {
         />
 
         <div className="w-full">
-          <GridMap
-            rows={rows}
-            cols={cols}
-            grid={grid}
-            onCellClick={handleCellClick}
-            coverage={coverage}
-            antennaData={optimizationResult?.antennas}
-            coverageColor={coverageColor}
-            selectedAntennaType={selectedAntennaType}
-            manualAntennas={manualAntennas}
-            antennaSpecs={antennaSpecs}
-          />
+          {rows * cols > 10000 ? (
+            <CanvasGrid
+              rows={rows}
+              cols={cols}
+              grid={grid}
+              onCellClick={handleCellClick}
+              coverage={coverage}
+              antennaData={optimizationResult?.antennas}
+              manualAntennas={manualAntennas}
+              antennaSpecs={antennaSpecs}
+            />
+          ) : (
+            <GridMap
+              rows={rows}
+              cols={cols}
+              grid={grid}
+              onCellClick={handleCellClick}
+              coverage={coverage}
+              antennaData={optimizationResult?.antennas}
+              coverageColor={coverageColor}
+              selectedAntennaType={selectedAntennaType}
+              manualAntennas={manualAntennas}
+              antennaSpecs={antennaSpecs}
+            />
+          )}
         </div>
       </div>
     </main>
