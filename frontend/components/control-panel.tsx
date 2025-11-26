@@ -3,14 +3,16 @@
 import React from 'react';
 import { Settings2, Play, RefreshCw, Trash2, MapPin, Radio, Cpu } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AntennaType, AntennaSpec } from '@/lib/api-config';
 
 interface ControlPanelProps {
     rows: number;
     cols: number;
     setRows: (v: number) => void;
     setCols: (v: number) => void;
-    radius: number;
-    setRadius: (v: number) => void;
+    targetCoverage: number;
+    setTargetCoverage: (v: number) => void;
+    antennaSpecs: AntennaSpec[];
     editMode: 'house' | 'antenna';
     setEditMode: (m: 'house' | 'antenna') => void;
     algorithm: 'greedy' | 'genetic' | 'simulated-annealing' | 'brute-force';
@@ -23,13 +25,14 @@ interface ControlPanelProps {
 
 export function ControlPanel({
     rows, cols, setRows, setCols,
-    radius, setRadius,
+    targetCoverage, setTargetCoverage,
+    antennaSpecs,
     editMode, setEditMode,
     algorithm, setAlgorithm,
     onRandomize, onClear, onOptimize, isOptimizing
 }: ControlPanelProps) {
     const algorithmOptions = [
-        { value: 'greedy', label: 'Greedy (Fast)', description: 'Quick approximation' },
+        { value: 'greedy', label: 'Greedy (Fast)', description: 'Cost-optimized placement' },
         { value: 'genetic', label: 'Genetic Algorithm', description: 'Evolutionary approach' },
         { value: 'simulated-annealing', label: 'Simulated Annealing', description: 'Temperature-based' },
         { value: 'brute-force', label: 'Brute Force', description: 'Exhaustive search' }
@@ -70,21 +73,43 @@ export function ControlPanel({
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-sm text-slate-400 font-medium">Antenna Parameters</label>
-                    <div>
-                        <span className="text-xs text-slate-500 block mb-1">Coverage Radius (cells)</span>
-                        <input
-                            type="range"
-                            min="1" max="10"
-                            value={radius}
-                            onChange={(e) => setRadius(Number(e.target.value))}
-                            className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                        />
-                        <div className="flex justify-between text-xs text-slate-500 mt-1">
-                            <span>1</span>
-                            <span className="text-blue-400 font-bold">{radius}</span>
-                            <span>10</span>
+                    <label className="text-sm text-slate-400 font-medium">Optimization Target</label>
+                    <div className="space-y-3">
+                        <div>
+                            <span className="text-xs text-slate-500 block mb-1">Target User Coverage (%)</span>
+                            <input
+                                type="range"
+                                min="50" max="100" step="5"
+                                value={targetCoverage}
+                                onChange={(e) => setTargetCoverage(Number(e.target.value))}
+                                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                            />
+                            <div className="flex justify-between text-xs text-slate-500 mt-1">
+                                <span>50%</span>
+                                <span className="text-emerald-400 font-bold text-sm">{targetCoverage}%</span>
+                                <span>100%</span>
+                            </div>
                         </div>
+                    </div>
+                </div>
+
+                <div className="h-px bg-slate-800/50" />
+
+                <div className="space-y-2">
+                    <label className="text-sm text-slate-400 font-medium">Available Antenna Types</label>
+                    <div className="space-y-2">
+                        {antennaSpecs.map(spec => (
+                            <div key={spec.type} className="p-2 bg-slate-900/50 rounded-lg border border-slate-800">
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-sm font-semibold text-slate-200 uppercase">{spec.type}</span>
+                                    <span className="text-sm font-bold text-emerald-400">${spec.cost.toLocaleString()}</span>
+                                </div>
+                                <div className="text-xs text-slate-500 space-y-0.5">
+                                    <div>Coverage: {spec.radius} cells radius</div>
+                                    <div>Capacity: {spec.max_users} users</div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>

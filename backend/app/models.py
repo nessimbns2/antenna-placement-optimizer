@@ -15,13 +15,14 @@ class AntennaSpec(BaseModel):
     type: AntennaType
     radius: int
     max_users: int
+    cost: int
 
 
-# Predefined antenna specifications
+# Predefined antenna specifications with costs
 ANTENNA_SPECS: Dict[AntennaType, AntennaSpec] = {
-    AntennaType.SMALL: AntennaSpec(type=AntennaType.SMALL, radius=2, max_users=50),
-    AntennaType.MEDIUM: AntennaSpec(type=AntennaType.MEDIUM, radius=3, max_users=100),
-    AntennaType.LARGE: AntennaSpec(type=AntennaType.LARGE, radius=4, max_users=200),
+    AntennaType.SMALL: AntennaSpec(type=AntennaType.SMALL, radius=2, max_users=50, cost=1000),
+    AntennaType.MEDIUM: AntennaSpec(type=AntennaType.MEDIUM, radius=3, max_users=100, cost=2500),
+    AntennaType.LARGE: AntennaSpec(type=AntennaType.LARGE, radius=4, max_users=200, cost=5000),
 }
 
 USERS_PER_HOUSE = 10  # Each house contains 10 users
@@ -32,10 +33,11 @@ class OptimizationRequest(BaseModel):
     
     width: int = Field(..., gt=0, description="Grid width")
     height: int = Field(..., gt=0, description="Grid height")
-    num_antennas: int = Field(..., gt=0, description="Number of antennas to place")
-    antenna_type: AntennaType = Field(
-        default=AntennaType.MEDIUM,
-        description="Type of antenna: small (r=2, 50 users), medium (r=3, 100 users), large (r=4, 200 users)"
+    target_coverage: float = Field(
+        default=95.0,
+        ge=0,
+        le=100,
+        description="Target user coverage percentage (0-100). Algorithm will minimize cost while achieving this coverage."
     )
     obstacles: List[Tuple[int, int]] = Field(
         default_factory=list,
@@ -74,6 +76,7 @@ class AntennaPlacement(BaseModel):
     type: AntennaType = Field(..., description="Antenna type")
     radius: int = Field(..., description="Coverage radius")
     max_users: int = Field(..., description="Maximum users this antenna can serve")
+    cost: int = Field(..., description="Cost of this antenna")
 
 
 class OptimizationResponse(BaseModel):
@@ -115,6 +118,11 @@ class OptimizationResponse(BaseModel):
         ge=0,
         le=100,
         description="Percentage of antenna capacity being used"
+    )
+    total_cost: int = Field(
+        ...,
+        ge=0,
+        description="Total cost of all placed antennas"
     )
     algorithm: str = Field(..., description="Algorithm used for optimization")
     execution_time_ms: float = Field(..., description="Execution time in milliseconds")

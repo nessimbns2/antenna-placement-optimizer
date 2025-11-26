@@ -72,7 +72,8 @@ async def get_antenna_types():
                 "type": spec.type.value,
                 "radius": spec.radius,
                 "max_users": spec.max_users,
-                "description": f"Coverage radius: {spec.radius}, Max users: {spec.max_users}"
+                "cost": spec.cost,
+                "description": f"Coverage radius: {spec.radius}, Max users: {spec.max_users}, Cost: ${spec.cost}"
             }
             for spec in ANTENNA_SPECS.values()
         ],
@@ -108,18 +109,10 @@ async def optimize_antenna_placement(request: OptimizationRequest) -> Optimizati
     logger.info(
         f"Received optimization request: algorithm={request.algorithm}, "
         f"grid={request.width}x{request.height}, "
-        f"antennas={request.num_antennas}, type={request.antenna_type}"
+        f"target_coverage={request.target_coverage}%"
     )
     
     try:
-        # Validate input constraints
-        total_cells = request.width * request.height
-        if request.num_antennas > total_cells:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Number of antennas ({request.num_antennas}) exceeds total grid cells ({total_cells})"
-            )
-        
         # Check if houses are within grid bounds
         for obs_x, obs_y in request.obstacles:
             if not (0 <= obs_x < request.width and 0 <= obs_y < request.height):
@@ -128,17 +121,13 @@ async def optimize_antenna_placement(request: OptimizationRequest) -> Optimizati
                     detail=f"House at ({obs_x}, {obs_y}) is outside grid bounds"
                 )
         
-        # Get antenna specifications
-        antenna_spec = ANTENNA_SPECS[request.antenna_type]
-        
         # Route to appropriate algorithm
         if request.algorithm == "greedy":
             algorithm = GreedyAlgorithm(
                 width=request.width,
                 height=request.height,
-                num_antennas=request.num_antennas,
-                radius=antenna_spec.radius,
-                max_users=antenna_spec.max_users,
+                target_coverage=request.target_coverage,
+                antenna_specs=ANTENNA_SPECS,
                 houses=request.obstacles
             )
             result = algorithm.optimize()
@@ -151,16 +140,17 @@ async def optimize_antenna_placement(request: OptimizationRequest) -> Optimizati
         
         execution_time_ms = (time.time() - start_time) * 1000
         
-        # Create antenna placements with details
+        # Create antenna placements with details from result
         antenna_placements = [
             AntennaPlacement(
-                x=x,
-                y=y,
-                type=request.antenna_type,
-                radius=antenna_spec.radius,
-                max_users=antenna_spec.max_users
+                x=ant["x"],
+                y=ant["y"],
+                type=ant["type"],
+                radius=ant["radius"],
+                max_users=ant["max_users"],
+                cost=ant["cost"]
             )
-            for x, y in result["antennas"]
+            for ant in result["antennas"]
         ]
         
         response = OptimizationResponse(
@@ -171,12 +161,14 @@ async def optimize_antenna_placement(request: OptimizationRequest) -> Optimizati
             user_coverage_percentage=round(result["user_coverage_percentage"], 2),
             total_capacity=result["total_capacity"],
             capacity_utilization=round(result["capacity_utilization"], 2),
+            total_cost=result["total_cost"],
             algorithm=request.algorithm,
             execution_time_ms=round(execution_time_ms, 2)
         )
         
         logger.info(
             f"Optimization complete: {len(antenna_placements)} antennas, "
+            f"${result['total_cost']} total cost, "
             f"{result['coverage_percentage']:.2f}% area coverage, "
             f"{result['users_covered']}/{result['total_users']} users ({result['user_coverage_percentage']:.2f}%), "
             f"{execution_time_ms:.2f}ms"

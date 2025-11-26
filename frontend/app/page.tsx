@@ -4,23 +4,42 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { GridMap, CellType } from '@/components/grid-map';
 import { ControlPanel } from '@/components/control-panel';
 import { StatsCard } from '@/components/stats-card';
-import { API_CONFIG } from '@/lib/api-config';
+import { API_CONFIG, AntennaType, OptimizationResponse, AntennaSpec } from '@/lib/api-config';
 
 const DEFAULT_ROWS = 15;
 const DEFAULT_COLS = 20;
 const COST_PER_ANTENNA = 5000;
+const USERS_PER_HOUSE = 10;
 
 export default function Home() {
   const [rows, setRows] = useState(DEFAULT_ROWS);
   const [cols, setCols] = useState(DEFAULT_COLS);
   const [grid, setGrid] = useState<CellType[][]>([]);
-  const [radius, setRadius] = useState(3);
+  const [targetCoverage, setTargetCoverage] = useState(95);
   const [editMode, setEditMode] = useState<'house' | 'antenna'>('house');
   const [algorithm, setAlgorithm] = useState<'greedy' | 'genetic' | 'simulated-annealing' | 'brute-force'>('greedy');
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [antennaSpecs, setAntennaSpecs] = useState<AntennaSpec[]>([]);
+  const [optimizationResult, setOptimizationResult] = useState<OptimizationResponse | null>(null);
 
   // Derived state for coverage visualization
   const [coverage, setCoverage] = useState<boolean[][]>([]);
+
+  // Fetch antenna types on mount
+  useEffect(() => {
+    const fetchAntennaTypes = async () => {
+      try {
+        const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.ANTENNA_TYPES}`);
+        if (response.ok) {
+          const data = await response.json();
+          setAntennaSpecs(data.antenna_types);
+        }
+      } catch (error) {
+        console.error('Failed to fetch antenna types:', error);
+      }
+    };
+    fetchAntennaTypes();
+  }, []);
 
   // Initialize grid
   useEffect(() => {
@@ -28,38 +47,39 @@ export default function Home() {
       const newGrid = Array(rows).fill(null).map(() => Array(cols).fill('empty'));
       return newGrid as CellType[][];
     });
+    setOptimizationResult(null);
   }, [rows, cols]);
 
-  // Calculate coverage
-  const calculateCoverage = useCallback((currentGrid: CellType[][], r: number) => {
-    const newCoverage = Array(currentGrid.length).fill(null).map(() => Array(currentGrid[0]?.length || 0).fill(false));
+  // Calculate coverage based on optimization result
+  const calculateCoverage = useCallback(() => {
+    if (!optimizationResult || grid.length === 0) {
+      setCoverage(Array(grid.length).fill(null).map(() => Array(grid[0]?.length || 0).fill(false)));
+      return;
+    }
 
-    currentGrid.forEach((row, rowIndex) => {
-      row.forEach((cell, colIndex) => {
-        if (cell === 'antenna') {
-          // Mark covered cells
-          for (let i = -r; i <= r; i++) {
-            for (let j = -r; j <= r; j++) {
-              if (i * i + j * j <= r * r) { // Euclidean distance
-                const targetR = rowIndex + i;
-                const targetC = colIndex + j;
-                if (targetR >= 0 && targetR < currentGrid.length && targetC >= 0 && targetC < currentGrid[0].length) {
-                  newCoverage[targetR][targetC] = true;
-                }
-              }
+    const newCoverage = Array(grid.length).fill(null).map(() => Array(grid[0]?.length || 0).fill(false));
+
+    optimizationResult.antennas.forEach(antenna => {
+      const r = antenna.radius;
+      for (let i = -r; i <= r; i++) {
+        for (let j = -r; j <= r; j++) {
+          if (i * i + j * j <= r * r) {
+            const targetY = antenna.y + i;
+            const targetX = antenna.x + j;
+            if (targetY >= 0 && targetY < grid.length && targetX >= 0 && targetX < grid[0].length) {
+              newCoverage[targetY][targetX] = true;
             }
           }
         }
-      });
+      }
     });
-    return newCoverage;
-  }, []);
+    
+    setCoverage(newCoverage);
+  }, [grid, optimizationResult]);
 
   useEffect(() => {
-    if (grid.length > 0) {
-      setCoverage(calculateCoverage(grid, radius));
-    }
-  }, [grid, radius, calculateCoverage]);
+    calculateCoverage();
+  }, [calculateCoverage]);
 
   const handleCellClick = (r: number, c: number) => {
     const newGrid = [...grid.map(row => [...row])];
@@ -96,9 +116,20 @@ export default function Home() {
       // Clear existing antennas
       let currentGrid: CellType[][] = grid.map(row => row.map(cell => cell === 'antenna' ? 'empty' : cell));
       setGrid(currentGrid);
+      setOptimizationResult(null);
 
       // Allow UI to update
       await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Collect house positions (obstacles)
+      const obstacles: [number, number][] = [];
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          if (currentGrid[y][x] === 'house') {
+            obstacles.push([x, y]);
+          }
+        }
+      }
 
       // Call FastAPI backend
       const apiUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OPTIMIZE}`;
@@ -108,28 +139,32 @@ export default function Home() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          grid: currentGrid,
-          radius,
-          algorithm
+          width: cols,
+          height: rows,
+          target_coverage: targetCoverage,
+          obstacles: obstacles,
+          algorithm: algorithm
         })
       });
 
       if (!response.ok) {
-        throw new Error('Optimization failed');
+        const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+        throw new Error(errorData.detail || 'Optimization failed');
       }
 
-      const data = await response.json();
+      const data: OptimizationResponse = await response.json();
+      setOptimizationResult(data);
 
       // Place antennas with animation
       for (const antenna of data.antennas) {
         currentGrid = currentGrid.map(row => [...row]);
-        currentGrid[antenna.row][antenna.col] = 'antenna';
+        currentGrid[antenna.y][antenna.x] = 'antenna';
         setGrid(currentGrid);
         await new Promise(resolve => setTimeout(resolve, 200));
       }
     } catch (error) {
       console.error('Optimization error:', error);
-      alert('Optimization failed. Please try again.');
+      alert(`Optimization failed: ${error instanceof Error ? error.message : 'Please try again.'}`);
     } finally {
       setIsOptimizing(false);
     }
@@ -137,6 +172,7 @@ export default function Home() {
 
   // Stats
   const totalHouses = grid.flat().filter(c => c === 'house').length;
+  const totalUsers = totalHouses * USERS_PER_HOUSE;
   const antennaCount = grid.flat().filter(c => c === 'antenna').length;
   const coveredHousesCount = grid.flat().reduce((acc, cell, idx) => {
     const r = Math.floor(idx / cols);
@@ -144,6 +180,7 @@ export default function Home() {
     if (cell === 'house' && coverage[r]?.[c]) return acc + 1;
     return acc;
   }, 0);
+  const coveredUsers = coveredHousesCount * USERS_PER_HOUSE;
 
   return (
     <main className="min-h-screen p-4 md:p-8 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black">
@@ -161,8 +198,11 @@ export default function Home() {
         <StatsCard
           totalHouses={totalHouses}
           coveredHouses={coveredHousesCount}
+          totalUsers={totalUsers}
+          coveredUsers={coveredUsers}
           antennaCount={antennaCount}
           costPerAntenna={COST_PER_ANTENNA}
+          optimizationResult={optimizationResult}
         />
 
         <div className="flex flex-col lg:flex-row gap-8 items-start">
@@ -173,12 +213,14 @@ export default function Home() {
               grid={grid}
               onCellClick={handleCellClick}
               coverage={coverage}
+              antennaData={optimizationResult?.antennas}
             />
           </div>
 
           <ControlPanel
             rows={rows} cols={cols} setRows={setRows} setCols={setCols}
-            radius={radius} setRadius={setRadius}
+            targetCoverage={targetCoverage} setTargetCoverage={setTargetCoverage}
+            antennaSpecs={antennaSpecs}
             editMode={editMode} setEditMode={setEditMode}
             algorithm={algorithm} setAlgorithm={setAlgorithm}
             onRandomize={handleRandomize}
