@@ -222,10 +222,10 @@ export function GridSeedingPanel({
             disabled={editMode !== "antenna"}
             className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <option value="Femto">Femto - $1k (r:1, 20 users)</option>
-            <option value="Pico">Pico - $5k (r:6, 100 users)</option>
-            <option value="Micro">Micro - $12k (r:40, 500 users)</option>
-            <option value="Macro">Macro - $25k (r:100, 2000 users)</option>
+            <option value="Femto">Femto - $200 (r:2, 20 users)</option>
+            <option value="Pico">Pico - $2.1k (r:5, 300 users)</option>
+            <option value="Micro">Micro - $6k (r:15, 1200 users)</option>
+            <option value="Macro">Macro - $30k (r:40, 4000 users)</option>
           </select>
         </div>
 

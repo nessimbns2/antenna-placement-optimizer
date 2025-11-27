@@ -268,6 +268,16 @@ class GreedyAlgorithm:
             position, antenna_type, score = result
             spec = self.antenna_specs[antenna_type]
 
+            # Stop if score is not positive (antenna would add no value)
+            if score <= 0:
+                logger.info(
+                    f"Best available antenna has non-positive score ({score:.4f}). "
+                    f"Stopping optimization to avoid wasteful placements."
+                )
+                print(
+                    f"\n✋ Stopped: Best score is {score:.4f} (no value added)")
+                break
+
             # Check if we can afford this antenna
             if self.max_budget and (total_cost + spec.cost) > self.max_budget:
                 logger.info(
