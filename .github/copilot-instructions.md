@@ -3,6 +3,7 @@
 ## Project Architecture
 
 This is a **decoupled full-stack application** for cellular antenna placement optimization:
+
 - **Frontend**: Next.js 16 (App Router) with TypeScript, Tailwind CSS v4, Canvas rendering
 - **Backend**: FastAPI with Poetry, Python 3.9+, Pydantic v2 models
 - **Communication**: REST API over HTTP (`http://localhost:8000` ↔ `http://localhost:3000`)
@@ -12,12 +13,14 @@ This is a **decoupled full-stack application** for cellular antenna placement op
 ## Domain Model & Terminology
 
 ### Core Entities
+
 - **Grid**: 2D coordinate system where 1 cell = 50 meters
 - **Houses**: User demand points at `(x, y)` coordinates; each contains exactly **20 users**
 - **Antennas**: Have `type`, `radius` (Euclidean coverage), `max_users` (capacity), `cost`
 - **Coverage**: Calculated using **Euclidean distance** (perfect circles), NOT Manhattan/Chebyshev
 
 ### Antenna Types (backend/app/models.py)
+
 ```python
 ANTENNA_SPECS = {
     AntennaType.FEMTO:  AntennaSpec(radius=2,  max_users=20,   cost=200),
@@ -30,6 +33,7 @@ ANTENNA_SPECS = {
 ## Backend Development
 
 ### Running the Backend
+
 ```bash
 cd backend
 poetry install
@@ -37,7 +41,9 @@ poetry run python -m app.main  # Runs on port 8000
 ```
 
 ### API Contract (backend/app/main.py, frontend/lib/api-config.ts)
+
 **POST /optimize** expects:
+
 ```typescript
 {
   width: number, height: number,
@@ -50,6 +56,7 @@ poetry run python -m app.main  # Runs on port 8000
 ```
 
 Returns:
+
 ```typescript
 {
   antennas: AntennaPlacement[],  // {x, y, type, radius, max_users, cost}
@@ -65,6 +72,7 @@ Returns:
 ```
 
 ### Greedy Algorithm (backend/app/algorithms/greedy.py)
+
 - **Score formula**: `(Coverage_Value + Capacity_Value - Waste_Value) / Cost`
   - Coverage_Value = new users covered
   - Capacity_Value = antenna's max_users
@@ -75,7 +83,9 @@ Returns:
 - Uses Euclidean distance for coverage calculations
 
 ### CORS Configuration (backend/app/config.py)
+
 Default: `http://localhost:3000`. Override via environment variable:
+
 ```bash
 CORS_ORIGINS="http://localhost:3000,http://localhost:3001"
 ```
@@ -83,6 +93,7 @@ CORS_ORIGINS="http://localhost:3000,http://localhost:3001"
 ## Frontend Development
 
 ### Running the Frontend
+
 ```bash
 cd frontend
 npm install
@@ -90,44 +101,53 @@ npm run dev  # Runs on port 3000
 ```
 
 ### Environment Variables
+
 Create `frontend/.env.local`:
+
 ```
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
 ```
 
 ### State Management Pattern (frontend/app/page.tsx)
+
 - **Grid state**: 2D array of `CellType = "empty" | "house" | "antenna" | "covered"`
 - **Manual antenna tracking**: `Map<string, AntennaType>` for user-placed antennas (key: `"x,y"`)
 - **Optimization result**: Stored separately in `optimizationResult` state
 - **Coverage visualization**: Recalculated via `calculateCoverage()` whenever optimization result changes
 
 ### Grid Seeding Patterns (frontend/components/grid-seeding-panel.tsx)
+
 Auto-generates house distributions: Random, Cluster (25% density at center), Linear (diagonal), Edge (perimeter), Diagonal (two diagonals).
 
 ### Canvas Rendering (frontend/components/canvas-grid.tsx)
+
 Uses **HTML Canvas** for performance on large grids (up to 1000x1000). Dynamically calculates cell size based on viewport. Separate from React grid component (`grid-map.tsx`) which is for smaller grids.
 
 ## Development Workflow
 
 ### Testing Backend
+
 ```bash
 # Run test script with different scenarios
 poetry run python backend/test_api.py
 ```
 
 ### Adding New Algorithms
+
 1. Create new file in `backend/app/algorithms/`
 2. Implement class with `optimize()` → Dict method
 3. Register in `backend/app/main.py` optimize endpoint's algorithm router
 4. Update `algorithm` type in `frontend/lib/api-config.ts` and form dropdown
 
 ### Common Pitfalls
+
 - **Grid coordinates**: Backend uses `(x, y)`, frontend sometimes uses `[row, col]` for arrays (watch indexing)
 - **Coverage calculation**: Always use Euclidean distance, not grid distance
 - **Antenna placement constraint**: `is_valid_position()` checks for houses
 - **Capacity vs Coverage**: Two separate metrics—area coverage and user capacity utilization
 
 ## Key Files Reference
+
 - `backend/app/main.py` - API endpoints, request routing
 - `backend/app/models.py` - Pydantic models, antenna specs
 - `backend/app/algorithms/greedy.py` - Score-based optimization
@@ -136,6 +156,7 @@ poetry run python backend/test_api.py
 - `frontend/components/canvas-grid.tsx` - Performance-optimized grid renderer
 
 ## Conventions
+
 - Backend uses **snake_case**, Frontend uses **camelCase**
 - All distances/radii in **grid cells** (1 cell = 50m)
 - Always validate grid bounds before placement

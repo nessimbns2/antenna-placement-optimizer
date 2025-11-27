@@ -26,6 +26,9 @@ interface CanvasGridProps {
     max_users: number;
     cost: number;
   }[];
+  largePixels?: boolean;
+  isFullscreen?: boolean;
+  onExitFullscreen?: () => void;
 }
 
 export function CanvasGrid({
@@ -37,6 +40,9 @@ export function CanvasGrid({
   antennaData = [],
   manualAntennas = new Map(),
   antennaSpecs = [],
+  largePixels = false,
+  isFullscreen = false,
+  onExitFullscreen,
 }: CanvasGridProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -49,14 +55,13 @@ export function CanvasGrid({
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [internalFullscreen, setInternalFullscreen] = useState(false);
   const [panMode, setPanMode] = useState(false);
 
-  // Base cell size
-  const baseCellSize = Math.max(
-    4,
-    Math.min(40, Math.floor(800 / Math.max(rows, cols)))
-  );
+  // Base cell size - larger for small grids with largePixels option
+  const baseCellSize = largePixels
+    ? Math.min(60, Math.floor(800 / Math.max(rows, cols)))
+    : Math.max(4, Math.min(40, Math.floor(800 / Math.max(rows, cols))));
 
   // Actual cell size with zoom
   const cellSize = baseCellSize * zoom;
@@ -305,14 +310,14 @@ export function CanvasGrid({
       container
         .requestFullscreen()
         .then(() => {
-          setIsFullscreen(true);
+          setInternalFullscreen(true);
         })
         .catch((err) => {
           console.error("Fullscreen error:", err);
         });
     } else {
       document.exitFullscreen().then(() => {
-        setIsFullscreen(false);
+        setInternalFullscreen(false);
       });
     }
   }, []);
@@ -320,7 +325,7 @@ export function CanvasGrid({
   // Listen for fullscreen changes
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      setInternalFullscreen(!!document.fullscreenElement);
     };
 
     document.addEventListener("fullscreenchange", handleFullscreenChange);
@@ -419,9 +424,9 @@ export function CanvasGrid({
         <button
           onClick={toggleFullscreen}
           className="p-2 bg-slate-900/90 hover:bg-slate-800 border border-slate-700 rounded-lg transition-all shadow-lg backdrop-blur-sm"
-          title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+          title={internalFullscreen ? "Exit Fullscreen" : "Fullscreen"}
         >
-          {isFullscreen ? (
+          {internalFullscreen ? (
             <Minimize2 size={18} className="text-slate-300" />
           ) : (
             <Maximize2 size={18} className="text-slate-300" />
@@ -483,7 +488,7 @@ export function CanvasGrid({
 
       <div
         ref={scrollContainerRef}
-        className={`overflow-auto ${isFullscreen ? "h-screen w-screen" : "max-h-[800px] max-w-full"}`}
+        className={`overflow-auto ${internalFullscreen || isFullscreen ? "h-screen w-screen" : "max-h-[800px] max-w-full"}`}
       >
         <canvas
           ref={canvasRef}

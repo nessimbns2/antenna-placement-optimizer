@@ -22,6 +22,8 @@ interface GridMapProps {
     max_users: number;
     cost: number;
   }[];
+  isFullscreen?: boolean;
+  onExitFullscreen?: () => void;
 }
 
 export function GridMap({
@@ -34,6 +36,8 @@ export function GridMap({
   selectedAntennaType = "Pico",
   manualAntennas = new Map(),
   antennaSpecs = [],
+  isFullscreen = false,
+  onExitFullscreen,
 }: GridMapProps) {
   // Adaptive cell size based on grid dimensions
   const cellSize = useMemo(() => {

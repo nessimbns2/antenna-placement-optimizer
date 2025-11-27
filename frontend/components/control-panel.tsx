@@ -35,6 +35,8 @@ interface ControlPanelProps {
   onClear: () => void;
   onOptimize: () => void;
   isOptimizing: boolean;
+  viewMode?: "react" | "canvas";
+  setViewMode?: (v: "react" | "canvas") => void;
 }
 
 export function ControlPanel({
@@ -57,6 +59,8 @@ export function ControlPanel({
   onClear,
   onOptimize,
   isOptimizing,
+  viewMode,
+  setViewMode,
 }: ControlPanelProps) {
   const algorithmOptions = [
     {
@@ -95,50 +99,81 @@ export function ControlPanel({
           <label className="text-sm text-slate-400 font-medium">
             Grid Size
           </label>
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <span className="text-xs text-slate-500 block mb-1">Rows</span>
+          <div className="space-y-3">
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs text-slate-500">Rows</span>
+                <span className="text-sm text-blue-400 font-bold">{rows}</span>
+              </div>
               <input
-                type="number"
+                type="range"
+                min="10"
+                max="350"
+                step="10"
                 value={rows}
-                onChange={(e) => {
-                  const val = Math.min(
-                    1000,
-                    Math.max(1, Number(e.target.value) || 1)
-                  );
-                  setRows(val);
-                }}
-                min="1"
-                max="1000"
-                className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                onChange={(e) => setRows(Number(e.target.value))}
+                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
               />
             </div>
-            <div className="flex-1">
-              <span className="text-xs text-slate-500 block mb-1">Cols</span>
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs text-slate-500">Columns</span>
+                <span className="text-sm text-blue-400 font-bold">{cols}</span>
+              </div>
               <input
-                type="number"
+                type="range"
+                min="10"
+                max="350"
+                step="10"
                 value={cols}
-                onChange={(e) => {
-                  const val = Math.min(
-                    1000,
-                    Math.max(1, Number(e.target.value) || 1)
-                  );
-                  setCols(val);
-                }}
-                min="1"
-                max="1000"
-                className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                onChange={(e) => setCols(Number(e.target.value))}
+                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500"
               />
             </div>
+            <button
+              onClick={() => {
+                setRows(20);
+                setCols(20);
+              }}
+              className="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition-all"
+            >
+              Reset to 20×20
+            </button>
           </div>
           {rows * cols > 10000 && (
             <div className="text-xs text-amber-400 mt-1">
               ⚡ Large grid: Using Canvas rendering
             </div>
           )}
-          {rows * cols > 100000 && (
-            <div className="text-xs text-orange-400 mt-1">
-              ⚠️ Very large grid may be slow
+          {rows * cols < 100 && setViewMode && (
+            <div className="mt-2">
+              <label className="text-xs text-slate-500 block mb-1">
+                View Mode
+              </label>
+              <div className="grid grid-cols-2 gap-1">
+                <button
+                  onClick={() => setViewMode("react")}
+                  className={cn(
+                    "py-1 px-2 rounded text-xs font-medium transition-all",
+                    viewMode === "react"
+                      ? "bg-blue-500/20 text-blue-400 border border-blue-500/50"
+                      : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                  )}
+                >
+                  React
+                </button>
+                <button
+                  onClick={() => setViewMode("canvas")}
+                  className={cn(
+                    "py-1 px-2 rounded text-xs font-medium transition-all",
+                    viewMode === "canvas"
+                      ? "bg-blue-500/20 text-blue-400 border border-blue-500/50"
+                      : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                  )}
+                >
+                  Canvas (Large)
+                </button>
+              </div>
             </div>
           )}
         </div>
