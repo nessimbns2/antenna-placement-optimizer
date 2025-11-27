@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MapPin, Radio, Trash2 } from "lucide-react";
+import { MapPin, Radio, Trash2, Download, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AntennaType } from "@/lib/api-config";
 
@@ -20,6 +20,8 @@ interface GridSeedingPanelProps {
   isFullscreen: boolean;
   setIsFullscreen: (v: boolean) => void;
   totalCells: number;
+  onExport?: () => void;
+  onImport?: (file: File) => void;
 }
 
 export function GridSeedingPanel({
@@ -37,7 +39,24 @@ export function GridSeedingPanel({
   isFullscreen,
   setIsFullscreen,
   totalCells,
+  onExport,
+  onImport,
 }: GridSeedingPanelProps) {
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onImport) {
+      onImport(file);
+    }
+    // Reset input so same file can be selected again
+    e.target.value = "";
+  };
+
   const patterns = [
     { value: "random", label: "🎲 Random Pattern" },
     { value: "circular_clusters", label: "🔵 Circular Clusters" },
@@ -203,10 +222,10 @@ export function GridSeedingPanel({
             disabled={editMode !== "antenna"}
             className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <option value="Femto">Femto - $1k (r:1, 20 users)</option>
-            <option value="Pico">Pico - $5k (r:6, 100 users)</option>
-            <option value="Micro">Micro - $12k (r:40, 500 users)</option>
-            <option value="Macro">Macro - $25k (r:100, 2000 users)</option>
+            <option value="Femto">Femto - $200 (r:2, 20 users)</option>
+            <option value="Pico">Pico - $2.1k (r:5, 300 users)</option>
+            <option value="Micro">Micro - $6k (r:15, 1200 users)</option>
+            <option value="Macro">Macro - $30k (r:40, 4000 users)</option>
           </select>
         </div>
 
@@ -219,6 +238,31 @@ export function GridSeedingPanel({
           >
             <Trash2 size={14} /> Clear
           </button>
+          {onExport && (
+            <button
+              onClick={onExport}
+              className="w-full py-2 bg-slate-800 hover:bg-emerald-900/20 hover:text-emerald-400 text-slate-300 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2"
+            >
+              <Download size={14} /> Export
+            </button>
+          )}
+          {onImport && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <button
+                onClick={handleImportClick}
+                className="w-full py-2 bg-slate-800 hover:bg-blue-900/20 hover:text-blue-400 text-slate-300 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2"
+              >
+                <Upload size={14} /> Import
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>

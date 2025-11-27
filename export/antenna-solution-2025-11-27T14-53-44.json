@@ -1,0 +1,99 @@
+{
+  "version": "1.0.0",
+  "timestamp": "2025-11-27T14:53:44.576Z",
+  "gridSize": {
+    "rows": 20,
+    "cols": 20
+  },
+  "houses": [
+    [
+      1,
+      2
+    ],
+    [
+      17,
+      4
+    ],
+    [
+      8,
+      7
+    ],
+    [
+      0,
+      11
+    ],
+    [
+      17,
+      14
+    ],
+    [
+      7,
+      15
+    ],
+    [
+      0,
+      19
+    ]
+  ],
+  "manualAntennas": [],
+  "optimizationResult": {
+    "antennas": [
+      {
+        "x": 9,
+        "y": 8,
+        "type": "Pico",
+        "radius": 10,
+        "max_users": 100,
+        "cost": 800
+      },
+      {
+        "x": 0,
+        "y": 17,
+        "type": "Femto",
+        "radius": 2,
+        "max_users": 20,
+        "cost": 200
+      },
+      {
+        "x": 0,
+        "y": 0,
+        "type": "Femto",
+        "radius": 2,
+        "max_users": 20,
+        "cost": 200
+      },
+      {
+        "x": 0,
+        "y": 1,
+        "type": "Femto",
+        "radius": 2,
+        "max_users": 20,
+        "cost": 200
+      },
+      {
+        "x": 0,
+        "y": 2,
+        "type": "Micro",
+        "radius": 30,
+        "max_users": 600,
+        "cost": 4200
+      }
+    ],
+    "coverage_percentage": 100,
+    "users_covered": 140,
+    "total_users": 140,
+    "user_coverage_percentage": 100,
+    "total_capacity": 760,
+    "capacity_utilization": 18.42,
+    "wasted_capacity": 620,
+    "total_cost": 5600,
+    "algorithm": "greedy",
+    "execution_time_ms": 1140.06
+  },
+  "algorithm": "greedy",
+  "allowedAntennaTypes": [
+    "Femto",
+    "Pico",
+    "Micro"
+  ]
+}

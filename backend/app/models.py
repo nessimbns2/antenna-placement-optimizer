@@ -6,9 +6,9 @@ from enum import Enum
 class AntennaType(str, Enum):
     """Antenna types with different specifications."""
     FEMTO = "Femto"    # Radius: 2, Max users: 20, Cost: $200
-    PICO = "Pico"      # Radius: 10, Max users: 100, Cost: $800
-    MICRO = "Micro"    # Radius: 30, Max users: 600, Cost: $4,200
-    MACRO = "Macro"    # Radius: 80, Max users: 2400, Cost: $14,400
+    PICO = "Pico"      # Radius: 5, Max users: 300, Cost: $2,100
+    MICRO = "Micro"    # Radius: 15, Max users: 1200, Cost: $6,000
+    MACRO = "Macro"    # Radius: 40, Max users: 4000, Cost: $30,000
 
 
 class AntennaSpec(BaseModel):
@@ -23,9 +23,9 @@ class AntennaSpec(BaseModel):
 # Based on grid system where 1 square = 50 meters
 ANTENNA_SPECS: Dict[AntennaType, AntennaSpec] = {
     AntennaType.FEMTO: AntennaSpec(type=AntennaType.FEMTO, radius=2, max_users=20, cost=200),
-    AntennaType.PICO: AntennaSpec(type=AntennaType.PICO, radius=10, max_users=100, cost=800),
-    AntennaType.MICRO: AntennaSpec(type=AntennaType.MICRO, radius=30, max_users=600, cost=4200),
-    AntennaType.MACRO: AntennaSpec(type=AntennaType.MACRO, radius=80, max_users=2400, cost=14400),
+    AntennaType.PICO: AntennaSpec(type=AntennaType.PICO, radius=5, max_users=300, cost=2100),
+    AntennaType.MICRO: AntennaSpec(type=AntennaType.MICRO, radius=15, max_users=1200, cost=6000),
+    AntennaType.MACRO: AntennaSpec(type=AntennaType.MACRO, radius=40, max_users=4000, cost=30000),
 }
 
 USERS_PER_HOUSE = 20  # Each house contains 20 users

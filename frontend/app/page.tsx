@@ -12,6 +12,11 @@ import {
   OptimizationResponse,
   AntennaSpec,
 } from "@/lib/api-config";
+import {
+  exportSolution,
+  importSolution,
+  applySolutionData,
+} from "@/lib/solution-export";
 
 const DEFAULT_ROWS = 20;
 const DEFAULT_COLS = 20;
@@ -780,6 +785,38 @@ export default function Home() {
     }
   };
 
+  // Export/Import handlers
+  const handleExport = () => {
+    exportSolution(
+      rows,
+      cols,
+      grid,
+      manualAntennas,
+      optimizationResult,
+      algorithm,
+      allowedAntennaTypes
+    );
+  };
+
+  const handleImport = async (file: File) => {
+    const data = await importSolution(file);
+    if (data) {
+      applySolutionData(data, {
+        setRows,
+        setCols,
+        setGrid,
+        setManualAntennas,
+        setOptimizationResult,
+        setAlgorithm,
+        setAllowedAntennaTypes,
+      });
+      // Update grid size to match imported data
+      setGridSize(data.gridSize.rows);
+    } else {
+      alert("Failed to import solution. Please check the file format.");
+    }
+  };
+
   // Stats
   const totalHouses = grid.flat().filter((c) => c === "house").length;
   const totalUsers = totalHouses * USERS_PER_HOUSE;
@@ -840,6 +877,8 @@ export default function Home() {
           isFullscreen={isFullscreen}
           setIsFullscreen={setIsFullscreen}
           totalCells={rows * cols}
+          onExport={handleExport}
+          onImport={handleImport}
         />
 
         <div
