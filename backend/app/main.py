@@ -14,6 +14,7 @@ from app.models import (
     ANTENNA_SPECS
 )
 from app.algorithms.greedy import GreedyAlgorithm
+from app.algorithms.simulated_annealing import SimulatedAnnealingAlgorithm
 
 # Configure logging
 logging.basicConfig(
@@ -124,6 +125,17 @@ async def optimize_antenna_placement(request: OptimizationRequest) -> Optimizati
         # Route to appropriate algorithm
         if request.algorithm == "greedy":
             algorithm = GreedyAlgorithm(
+                width=request.width,
+                height=request.height,
+                antenna_specs=ANTENNA_SPECS,
+                houses=request.obstacles,
+                allowed_antenna_types=request.allowed_antenna_types,
+                max_budget=request.max_budget,
+                max_antennas=request.max_antennas
+            )
+            result = algorithm.optimize()
+        elif request.algorithm == "simulated-annealing":
+            algorithm = SimulatedAnnealingAlgorithm(
                 width=request.width,
                 height=request.height,
                 antenna_specs=ANTENNA_SPECS,
