@@ -122,21 +122,6 @@ class OptimizationResponse(BaseModel):
         le=100,
         description="Percentage of users covered"
     )
-    total_capacity: int = Field(
-        ...,
-        ge=0,
-        description="Total user capacity of all placed antennas"
-    )
-    capacity_utilization: float = Field(
-        ...,
-        ge=0,
-        description="Percentage of antenna capacity being used (can exceed 100% if demand exceeds capacity)"
-    )
-    wasted_capacity: int = Field(
-        ...,
-        ge=0,
-        description="Unused capacity (total_capacity - users_covered)"
-    )
     total_cost: int = Field(
         ...,
         ge=0,

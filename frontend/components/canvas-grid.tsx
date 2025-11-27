@@ -58,6 +58,39 @@ export function CanvasGrid({
   const [internalFullscreen, setInternalFullscreen] = useState(false);
   const [panMode, setPanMode] = useState(false);
 
+  // Helper function to get color for antenna type
+  const getAntennaColor = (
+    type: AntennaType
+  ): { fill: string; stroke: string } => {
+    switch (type) {
+      case "Femto":
+        return {
+          fill: "rgba(239, 68, 68, 0.12)",
+          stroke: "rgba(239, 68, 68, 0.5)",
+        }; // Red
+      case "Pico":
+        return {
+          fill: "rgba(59, 130, 246, 0.12)",
+          stroke: "rgba(59, 130, 246, 0.5)",
+        }; // Blue
+      case "Micro":
+        return {
+          fill: "rgba(168, 85, 247, 0.12)",
+          stroke: "rgba(168, 85, 247, 0.5)",
+        }; // Purple
+      case "Macro":
+        return {
+          fill: "rgba(34, 197, 94, 0.12)",
+          stroke: "rgba(34, 197, 94, 0.5)",
+        }; // Green
+      default:
+        return {
+          fill: "rgba(255, 255, 255, 0.08)",
+          stroke: "rgba(255, 255, 255, 0.4)",
+        }; // White
+    }
+  };
+
   // Base cell size - larger for small grids with largePixels option
   const baseCellSize = largePixels
     ? Math.min(60, Math.floor(800 / Math.max(rows, cols)))
@@ -206,14 +239,17 @@ export function CanvasGrid({
           // Circle radius extends to far edge of coverage squares: (radius + 0.5) cells
           const radius = (radiusInCells + 0.5) * cellSize;
 
-          // Fill with white, nearly transparent
-          ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
+          // Get color for this antenna type
+          const colors = getAntennaColor(antenna.type);
+
+          // Fill with colored, nearly transparent
+          ctx.fillStyle = colors.fill;
           ctx.beginPath();
           ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
           ctx.fill();
 
-          // Stroke with white dashed outline
-          ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+          // Stroke with colored dashed outline
+          ctx.strokeStyle = colors.stroke;
           ctx.beginPath();
           ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
           ctx.stroke();
@@ -237,14 +273,17 @@ export function CanvasGrid({
             // Circle radius extends to far edge of coverage squares: (radius + 0.5) cells
             const radius = (radiusInCells + 0.5) * cellSize;
 
-            // Fill with white, nearly transparent
-            ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
+            // Get color for this antenna type
+            const colors = getAntennaColor(type);
+
+            // Fill with colored, nearly transparent
+            ctx.fillStyle = colors.fill;
             ctx.beginPath();
             ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
             ctx.fill();
 
-            // Stroke with white dashed outline
-            ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
+            // Stroke with colored dashed outline
+            ctx.strokeStyle = colors.stroke;
             ctx.beginPath();
             ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
             ctx.stroke();

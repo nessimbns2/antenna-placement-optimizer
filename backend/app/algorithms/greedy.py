@@ -120,16 +120,14 @@ class GreedyAlgorithm:
                 0 <= y < self.height and
                 (x, y) not in self.houses)
 
-    def calculate_score(self, new_users: int, antenna_capacity: int, cost: int, users_covered: int) -> float:
+    def calculate_score(self, new_users: int, cost: int) -> float:
         """
         Calculate the score for an antenna placement.
-        Score = (Coverage_Value + Capacity_Value - Waste_Value) / Cost
+        Score = New Users Covered / Cost
 
         Args:
             new_users: Number of new users that will be covered
-            antenna_capacity: Maximum capacity of the antenna
             cost: Cost of the antenna
-            users_covered: Current total users covered (before placing this antenna)
 
         Returns:
             Score value (higher is better)
@@ -137,27 +135,19 @@ class GreedyAlgorithm:
         if cost == 0:
             return 0
 
-        # Coverage Value: New users covered
-        coverage_value = new_users
+        # If no new users are covered, this antenna adds no value
+        if new_users == 0:
+            return -1.0  # Negative score to prevent placement
 
-        # Capacity Value: Additional capacity provided
-        capacity_value = antenna_capacity
-
-        # Waste Value: Capacity that exceeds covered users after placement
-        total_capacity_after = sum(
-            ant["max_users"] for ant in self.placed_antennas) + antenna_capacity
-        total_users_after = users_covered + new_users
-        waste_value = max(0, total_capacity_after - total_users_after)
-
-        # Calculate final score
-        score = (coverage_value + capacity_value - waste_value) / cost
+        # Calculate score: users covered per dollar spent
+        score = new_users / cost
 
         return score
 
     def find_best_antenna_placement(self) -> Tuple[Tuple[int, int], AntennaType, float] | None:
         """
         Find the best antenna placement using the score system.
-        Score = (Coverage_Value + Capacity_Value - Waste_Value) / Cost
+        Score = New Users Covered / Cost
 
         Returns:
             Tuple of (position, antenna_type, score) or None if no valid placement
@@ -165,8 +155,6 @@ class GreedyAlgorithm:
         best_position = None
         best_antenna_type = None
         best_score = float('-inf')  # Higher is better
-
-        users_covered = len(self.covered_houses) * USERS_PER_HOUSE
 
         # Try all antenna types
         for antenna_type, spec in self.antenna_specs.items():
@@ -186,9 +174,7 @@ class GreedyAlgorithm:
                     # Calculate score for this placement
                     score = self.calculate_score(
                         new_users=new_users,
-                        antenna_capacity=spec.max_users,
-                        cost=spec.cost,
-                        users_covered=users_covered
+                        cost=spec.cost
                     )
 
                     # Greedy principle: Select the placement with highest score
@@ -217,7 +203,7 @@ class GreedyAlgorithm:
         print(
             f"🏘️  Houses: {len(self.houses)} (Total users: {len(self.houses) * USERS_PER_HOUSE})")
         print(f"🗺️  Grid: {self.width}x{self.height}")
-        print(f"📐 Score Formula: (Coverage + Capacity - Waste) / Cost")
+        print(f"📐 Score Formula: New Users Covered / Cost")
 
         if self.max_budget:
             print(f"💵 Budget Limit: ${self.max_budget:,}")
@@ -308,20 +294,13 @@ class GreedyAlgorithm:
                                 100) if total_users > 0 else 0
             new_cost = total_cost + spec.cost
 
-            # Calculate current capacity utilization
-            current_capacity = sum(ant["max_users"]
-                                   for ant in self.placed_antennas)
-            current_capacity_pct = (
-                users_covered / current_capacity * 100) if current_capacity > 0 else 0
-
             # Pretty progress print every antenna
             antenna_emoji = {"Femto": "📱", "Pico": "📡",
                              "Micro": "🗼", "Macro": "🏗️"}
             emoji = antenna_emoji.get(antenna_type.value, "📡")
 
             print(f"{emoji} Antenna #{len(self.placed_antennas):2d}: {antenna_type.value:6s} @ ({position[0]:3d},{position[1]:3d}) "
-                  f"| Score: {score:7.2f} | Cost: ${spec.cost:>6,} | Coverage: {current_coverage:5.1f}% "
-                  f"| Capacity: {current_capacity_pct:5.1f}% | Total: ${new_cost:>8,}")
+                  f"| Score: {score:7.4f} | Cost: ${spec.cost:>6,} | Coverage: {current_coverage:5.1f}% | Total: ${new_cost:>8,}")
 
             logger.debug(
                 f"Placed {antenna_type.value} antenna #{len(self.placed_antennas)} at {position}, "
@@ -338,11 +317,6 @@ class GreedyAlgorithm:
         user_coverage_percentage = (
             users_covered / total_users * 100) if total_users > 0 else 0
 
-        total_capacity = sum(ant["max_users"] for ant in self.placed_antennas)
-        capacity_utilization = (
-            users_covered / total_capacity * 100) if total_capacity > 0 else 0
-        wasted_capacity = max(0, total_capacity - users_covered)
-
         total_cost = sum(ant["cost"] for ant in self.placed_antennas)
 
         # Pretty summary
@@ -354,10 +328,6 @@ class GreedyAlgorithm:
         print(
             f"👥 Users Covered: {users_covered}/{total_users} ({user_coverage_percentage:.2f}%)")
         print(f"📊 Area Coverage: {coverage_percentage:.2f}%")
-        print(
-            f"🔋 Capacity: {total_capacity:,} users ({capacity_utilization:.1f}% utilized)")
-        print(
-            f"⚠️  Wasted Capacity: {wasted_capacity:,} users ({100 - capacity_utilization:.1f}%)")
         print("="*70 + "\n")
 
         logger.info(
@@ -374,8 +344,5 @@ class GreedyAlgorithm:
             "users_covered": users_covered,
             "total_users": total_users,
             "user_coverage_percentage": user_coverage_percentage,
-            "total_capacity": total_capacity,
-            "capacity_utilization": capacity_utilization,
-            "wasted_capacity": wasted_capacity,
             "total_cost": total_cost
         }

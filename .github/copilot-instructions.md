@@ -16,7 +16,7 @@ This is a **decoupled full-stack application** for cellular antenna placement op
 
 - **Grid**: 2D coordinate system where 1 cell = 50 meters
 - **Houses**: User demand points at `(x, y)` coordinates; each contains exactly **20 users**
-- **Antennas**: Have `type`, `radius` (Euclidean coverage), `max_users` (capacity), `cost`
+- **Antennas**: Have `type`, `radius` (Euclidean coverage), `cost`
 - **Coverage**: Calculated using **Euclidean distance** (perfect circles), NOT Manhattan/Chebyshev
 
 ### Antenna Types (backend/app/models.py)
@@ -59,13 +59,10 @@ Returns:
 
 ```typescript
 {
-  antennas: AntennaPlacement[],  // {x, y, type, radius, max_users, cost}
+  antennas: AntennaPlacement[],  // {x, y, type, radius, cost}
   coverage_percentage: number,   // Area covered
   users_covered: number,         // Out of total_users
   user_coverage_percentage: number,
-  total_capacity: number,        // Sum of all antenna capacities
-  capacity_utilization: number,  // users_covered / total_capacity * 100
-  wasted_capacity: number,       // total_capacity - users_covered
   total_cost: number,
   execution_time_ms: number
 }
@@ -73,10 +70,8 @@ Returns:
 
 ### Greedy Algorithm (backend/app/algorithms/greedy.py)
 
-- **Score formula**: `(Coverage_Value + Capacity_Value - Waste_Value) / Cost`
-  - Coverage_Value = new users covered
-  - Capacity_Value = antenna's max_users
-  - Waste_Value = excess capacity after placement
+- **Score formula**: `new_users / cost`
+  - Maximizes cost-effectiveness (users covered per dollar)
 - Iteratively selects highest-scoring position/antenna-type combination
 - Respects `max_budget` and `max_antennas` constraints
 - Antennas **cannot be placed on houses**
@@ -144,7 +139,7 @@ poetry run python backend/test_api.py
 - **Grid coordinates**: Backend uses `(x, y)`, frontend sometimes uses `[row, col]` for arrays (watch indexing)
 - **Coverage calculation**: Always use Euclidean distance, not grid distance
 - **Antenna placement constraint**: `is_valid_position()` checks for houses
-- **Capacity vs Coverage**: Two separate metrics—area coverage and user capacity utilization
+- **User coverage**: Tracks how many users (from houses) are covered by antennas
 
 ## Key Files Reference
 
