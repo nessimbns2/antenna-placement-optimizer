@@ -29,7 +29,7 @@ antenna-placement-optimizer/
 - **Grid Seeding**: Auto-generate house patterns (Random, Cluster, Linear, Edge, Diagonal)
 - **Dual Edit Modes**: Place houses or manually position antennas
 - **Multiple Algorithms**: Choose from Greedy, Genetic, Simulated Annealing, and Brute Force
-- **Real-time Stats**: Track coverage percentage, antenna count, cost, and capacity utilization
+- **Real-time Stats**: Track coverage percentage, antenna count, and total cost
 - **Constraint Controls**: Set budget limits and maximum antenna counts
 - **Antenna Type Selection**: Choose which antenna types to allow in optimization
 - **Premium UI**: Dark mode glassmorphism design with smooth animations
@@ -37,7 +37,7 @@ antenna-placement-optimizer/
 
 ### Backend
 - **RESTful API**: Clean, well-documented FastAPI endpoints with Swagger/ReDoc
-- **Greedy Algorithm**: Fast, efficient antenna placement optimization with capacity constraints
+- **Greedy Algorithm**: Fast, efficient antenna placement optimization
 - **Flexible Configuration**: Support for different antenna types (Femto, Pico, Micro, Macro)
 - **User Coverage Tracking**: Optimize for both area and user coverage (20 users per house)
 - **Budget Constraints**: Support for maximum budget and antenna count limits
@@ -113,7 +113,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
    - Choose optimization algorithm
 4. **Run Optimization**: Backend calculates optimal placements considering:
    - Coverage radius of each antenna type
-   - User capacity constraints (20 users per house)
+   - User coverage (20 users per house)
    - Cost efficiency
    - Budget and antenna count limits
 5. **View Results**: 
@@ -125,18 +125,18 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 The system supports four antenna types with different characteristics:
 
-| Type  | Coverage Radius | Max Users | Cost    | Use Case             |
-| ----- | --------------- | --------- | ------- | -------------------- |
-| Femto | 2 units         | 20        | $200    | Dense urban areas    |
-| Pico  | 10 units        | 100       | $800    | Indoor/Small outdoor |
-| Micro | 30 units        | 600       | $4,200  | Urban neighborhoods  |
-| Macro | 80 units        | 2,400     | $14,400 | Wide area coverage   |
+| Type  | Coverage Radius | Cost    | Use Case             |
+| ----- | --------------- | ------- | -------------------- |
+| Femto | 2 units         | $200    | Dense urban areas    |
+| Pico  | 5 units         | $2,100  | Indoor/Small outdoor |
+| Micro | 15 units        | $6,000  | Urban neighborhoods  |
+| Macro | 40 units        | $30,000 | Wide area coverage   |
 
 *Note: 1 grid unit = 50 meters in real-world distance. Each house contains 20 users.*
 
 ### Optimization Algorithms
 
-- **Greedy (Implemented)**: Quick approximation prioritizing user coverage and cost efficiency
+- **Greedy (Implemented)**: Cost-effective placement maximizing users covered per dollar spent
 - **Genetic Algorithm**: Evolutionary optimization *(coming soon)*
 - **Simulated Annealing**: Temperature-based probabilistic search *(coming soon)*
 - **Brute Force**: Exhaustive search for small grids *(coming soon)*

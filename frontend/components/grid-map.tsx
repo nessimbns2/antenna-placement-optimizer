@@ -64,12 +64,14 @@ export function GridMap({
     switch (type) {
       case "Femto":
         return {
-          bg: "bg-cyan-500",
-          border: "border-cyan-400",
-          shadow: "shadow-[0_0_20px_rgba(6,182,212,0.7)]",
-          glow: "shadow-[0_0_30px_rgba(6,182,212,0.5),0_0_40px_rgba(6,182,212,0.3)]",
-          text: "text-cyan-100",
-          color: "#06b6d4",
+          bg: "bg-red-500",
+          border: "border-red-400",
+          shadow: "shadow-[0_0_20px_rgba(239,68,68,0.7)]",
+          glow: "shadow-[0_0_30px_rgba(239,68,68,0.5),0_0_40px_rgba(239,68,68,0.3)]",
+          text: "text-red-100",
+          color: "#ef4444",
+          coverageFill: "rgba(239, 68, 68, 0.12)",
+          coverageStroke: "rgba(239, 68, 68, 0.5)",
         };
       case "Pico":
         return {
@@ -79,6 +81,8 @@ export function GridMap({
           glow: "shadow-[0_0_35px_rgba(59,130,246,0.5),0_0_45px_rgba(59,130,246,0.3)]",
           text: "text-blue-100",
           color: "#3b82f6",
+          coverageFill: "rgba(59, 130, 246, 0.12)",
+          coverageStroke: "rgba(59, 130, 246, 0.5)",
         };
       case "Micro":
         return {
@@ -88,15 +92,19 @@ export function GridMap({
           glow: "shadow-[0_0_40px_rgba(168,85,247,0.6),0_0_50px_rgba(168,85,247,0.4)]",
           text: "text-purple-100",
           color: "#a855f7",
+          coverageFill: "rgba(168, 85, 247, 0.12)",
+          coverageStroke: "rgba(168, 85, 247, 0.5)",
         };
       case "Macro":
         return {
-          bg: "bg-pink-500",
-          border: "border-pink-400",
-          shadow: "shadow-[0_0_35px_rgba(236,72,153,0.8)]",
-          glow: "shadow-[0_0_45px_rgba(236,72,153,0.6),0_0_55px_rgba(236,72,153,0.4)]",
-          text: "text-pink-100",
-          color: "#ec4899",
+          bg: "bg-green-500",
+          border: "border-green-400",
+          shadow: "shadow-[0_0_35px_rgba(34,197,94,0.8)]",
+          glow: "shadow-[0_0_45px_rgba(34,197,94,0.6),0_0_55px_rgba(34,197,94,0.4)]",
+          text: "text-green-100",
+          color: "#22c55e",
+          coverageFill: "rgba(34, 197, 94, 0.12)",
+          coverageStroke: "rgba(34, 197, 94, 0.5)",
         };
     }
   }; // Get antenna icon based on type
@@ -183,14 +191,17 @@ export function GridMap({
               const radiusInCells = antenna.radius;
               const radius = radiusInCells * (cellSize + gap);
 
+              // Get antenna-specific colors
+              const antennaStyles = getAntennaStyles(antenna.type);
+
               return (
                 <circle
-                  key={`antenna-circle-${antenna.x}-${antenna.y}`}
+                  key={`antenna-circle-${antenna.x}-${antenna.y}-${idx}`}
                   cx={centerX}
                   cy={centerY}
                   r={radius}
-                  fill="rgba(255, 255, 255, 0.08)"
-                  stroke="rgba(255, 255, 255, 0.4)"
+                  fill={antennaStyles.coverageFill}
+                  stroke={antennaStyles.coverageStroke}
                   strokeWidth="3"
                   strokeDasharray="8,6"
                 />

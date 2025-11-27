@@ -44,9 +44,6 @@ export interface OptimizationResponse {
     users_covered: number;
     total_users: number;
     user_coverage_percentage: number;
-    total_capacity: number;
-    capacity_utilization: number;
-    wasted_capacity: number;
     total_cost: number;
     algorithm: string;
     execution_time_ms: number;

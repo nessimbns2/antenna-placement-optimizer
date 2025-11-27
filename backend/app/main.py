@@ -162,9 +162,6 @@ async def optimize_antenna_placement(request: OptimizationRequest) -> Optimizati
             total_users=result["total_users"],
             user_coverage_percentage=round(
                 result["user_coverage_percentage"], 2),
-            total_capacity=result["total_capacity"],
-            capacity_utilization=round(result["capacity_utilization"], 2),
-            wasted_capacity=result["wasted_capacity"],
             total_cost=result["total_cost"],
             algorithm=request.algorithm,
             execution_time_ms=round(execution_time_ms, 2)

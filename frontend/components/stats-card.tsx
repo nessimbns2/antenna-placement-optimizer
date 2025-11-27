@@ -29,7 +29,7 @@ export function StatsCard({
 
   return (
     <div className="space-y-4 w-full">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="glass-panel p-4 rounded-xl flex items-center gap-4">
           <div className="p-3 rounded-lg bg-cyan-500/20 text-cyan-400">
             <Users size={24} />
@@ -69,69 +69,19 @@ export function StatsCard({
             </p>
           </div>
         </div>
-
-        <div className="glass-panel p-4 rounded-xl flex items-center gap-4">
-          <div className="p-3 rounded-lg bg-amber-500/20 text-amber-400">
-            <Zap size={24} />
-          </div>
-          <div>
-            <p className="text-sm text-slate-400">Wasted Capacity</p>
-            <p className="text-2xl font-bold text-slate-100">
-              {optimizationResult && optimizationResult.total_capacity > 0
-                ? optimizationResult.wasted_capacity < 0
-                  ? "Deficit"
-                  : `${((optimizationResult.wasted_capacity / optimizationResult.total_capacity) * 100).toFixed(1)}%`
-                : "N/A"}
-              <span className="text-xs text-slate-500 ml-2 font-normal">
-                {optimizationResult && optimizationResult.wasted_capacity !== 0
-                  ? `(${optimizationResult.wasted_capacity < 0 ? "-" : ""}${Math.abs(optimizationResult.wasted_capacity).toLocaleString()})`
-                  : "(0)"}
-              </span>
-            </p>
-          </div>
-        </div>
       </div>
 
       {optimizationResult && (
         <div className="glass-panel p-4 rounded-xl">
           <h3 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
             <Zap size={16} className="text-yellow-400" />
-            Optimization Results - Capacity Optimized
+            Optimization Results
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+          <div className="grid grid-cols-2 md:grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-slate-500 text-xs">Area Coverage</p>
               <p className="text-slate-200 font-semibold">
                 {optimizationResult.coverage_percentage.toFixed(1)}%
-              </p>
-            </div>
-            <div>
-              <p className="text-slate-500 text-xs">Total Capacity</p>
-              <p className="text-slate-200 font-semibold">
-                {optimizationResult.total_capacity.toLocaleString()} users
-              </p>
-            </div>
-            <div>
-              <p className="text-slate-500 text-xs">Capacity Used</p>
-              <p className="text-slate-200 font-semibold">
-                {optimizationResult.capacity_utilization.toFixed(1)}%
-              </p>
-            </div>
-            <div>
-              <p className="text-slate-500 text-xs">Wasted Capacity</p>
-              <p
-                className={`font-semibold ${
-                  optimizationResult.wasted_capacity > 0
-                    ? optimizationResult.wasted_capacity >
-                      optimizationResult.users_covered * 0.5
-                      ? "text-amber-400"
-                      : "text-emerald-400"
-                    : "text-red-400"
-                }`}
-              >
-                {optimizationResult.wasted_capacity < 0
-                  ? `${Math.abs(optimizationResult.wasted_capacity).toLocaleString()} users (deficit)`
-                  : `${optimizationResult.wasted_capacity.toLocaleString()} users`}
               </p>
             </div>
             <div>
