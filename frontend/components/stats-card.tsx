@@ -78,11 +78,13 @@ export function StatsCard({
             <p className="text-sm text-slate-400">Wasted Capacity</p>
             <p className="text-2xl font-bold text-slate-100">
               {optimizationResult && optimizationResult.total_capacity > 0
-                ? `${((optimizationResult.wasted_capacity / optimizationResult.total_capacity) * 100).toFixed(1)}%`
-                : "0%"}
+                ? optimizationResult.wasted_capacity < 0
+                  ? "Deficit"
+                  : `${((optimizationResult.wasted_capacity / optimizationResult.total_capacity) * 100).toFixed(1)}%`
+                : "N/A"}
               <span className="text-xs text-slate-500 ml-2 font-normal">
-                {optimizationResult
-                  ? `(${optimizationResult.wasted_capacity.toLocaleString()})`
+                {optimizationResult && optimizationResult.wasted_capacity !== 0
+                  ? `(${optimizationResult.wasted_capacity < 0 ? "-" : ""}${Math.abs(optimizationResult.wasted_capacity).toLocaleString()})`
                   : "(0)"}
               </span>
             </p>
@@ -119,13 +121,17 @@ export function StatsCard({
               <p className="text-slate-500 text-xs">Wasted Capacity</p>
               <p
                 className={`font-semibold ${
-                  optimizationResult.wasted_capacity >
-                  optimizationResult.users_covered * 0.5
-                    ? "text-amber-400"
-                    : "text-emerald-400"
+                  optimizationResult.wasted_capacity > 0
+                    ? optimizationResult.wasted_capacity >
+                      optimizationResult.users_covered * 0.5
+                      ? "text-amber-400"
+                      : "text-emerald-400"
+                    : "text-red-400"
                 }`}
               >
-                {optimizationResult.wasted_capacity.toLocaleString()} users
+                {optimizationResult.wasted_capacity < 0
+                  ? `${Math.abs(optimizationResult.wasted_capacity).toLocaleString()} users (deficit)`
+                  : `${optimizationResult.wasted_capacity.toLocaleString()} users`}
               </p>
             </div>
             <div>

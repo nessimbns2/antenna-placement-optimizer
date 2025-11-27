@@ -133,26 +133,30 @@ export function GridMap({
 
   return (
     <div className="relative glass-panel rounded-xl p-4 overflow-hidden">
-      <div
-        className="relative overflow-auto max-h-[800px] max-w-full"
-        style={{
-          maxWidth: "100%",
-        }}
-      >
+      <div className="relative overflow-auto max-h-[800px]">
         <div
           className="relative"
           style={{
-            width: cols * cellSize,
-            height: rows * cellSize,
-            minWidth: "min-content",
+            width: isLargeGrid
+              ? cols * cellSize + cols
+              : cols * cellSize + (cols - 1) * 4,
+            height: isLargeGrid
+              ? rows * cellSize + rows
+              : rows * cellSize + (rows - 1) * 4,
           }}
         >
           {/* SVG Overlay for coverage circles */}
           <svg
-            className="absolute inset-0 pointer-events-none"
+            className="absolute pointer-events-none"
             style={{
-              width: cols * cellSize,
-              height: rows * cellSize,
+              width: isLargeGrid
+                ? cols * cellSize + cols
+                : cols * cellSize + (cols - 1) * 4,
+              height: isLargeGrid
+                ? rows * cellSize + rows
+                : rows * cellSize + (rows - 1) * 4,
+              left: 0,
+              top: 0,
             }}
           >
             <defs>
