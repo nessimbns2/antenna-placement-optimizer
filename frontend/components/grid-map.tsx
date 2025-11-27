@@ -19,7 +19,6 @@ interface GridMapProps {
   antennaSpecs?: {
     type: AntennaType;
     radius: number;
-    max_users: number;
     cost: number;
   }[];
   isFullscreen?: boolean;
@@ -97,14 +96,14 @@ export function GridMap({
         };
       case "Macro":
         return {
-          bg: "bg-green-500",
-          border: "border-green-400",
-          shadow: "shadow-[0_0_35px_rgba(34,197,94,0.8)]",
-          glow: "shadow-[0_0_45px_rgba(34,197,94,0.6),0_0_55px_rgba(34,197,94,0.4)]",
-          text: "text-green-100",
-          color: "#22c55e",
-          coverageFill: "rgba(34, 197, 94, 0.12)",
-          coverageStroke: "rgba(34, 197, 94, 0.5)",
+          bg: "bg-cyan-500",
+          border: "border-cyan-400",
+          shadow: "shadow-[0_0_35px_rgba(6,182,212,0.8)]",
+          glow: "shadow-[0_0_45px_rgba(6,182,212,0.6),0_0_55px_rgba(6,182,212,0.4)]",
+          text: "text-cyan-100",
+          color: "#06b6d4",
+          coverageFill: "rgba(6, 182, 212, 0.12)",
+          coverageStroke: "rgba(6, 182, 212, 0.5)",
         };
     }
   }; // Get antenna icon based on type
@@ -134,7 +133,6 @@ export function GridMap({
           y: r,
           type: type,
           radius: spec.radius,
-          max_users: spec.max_users,
           cost: spec.cost,
         });
       }
@@ -250,8 +248,8 @@ export function GridMap({
                       cell === "house" &&
                         isCovered &&
                         (isLargeGrid
-                          ? "bg-emerald-500/30 border-emerald-500/50 text-emerald-400"
-                          : "bg-emerald-500/20 border-emerald-500 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)]"),
+                          ? "bg-cyan-500/30 border-cyan-500/50 text-cyan-400"
+                          : "bg-cyan-500/20 border-cyan-500 text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.4)]"),
                       cell === "house" &&
                         !isCovered &&
                         (isLargeGrid

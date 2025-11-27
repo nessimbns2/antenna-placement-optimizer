@@ -14,7 +14,6 @@ export type AntennaType = 'Macro' | 'Micro' | 'Pico' | 'Femto';
 export interface AntennaSpec {
     type: AntennaType;
     radius: number;
-    max_users: number;
     cost: number;
     description: string;
 }
@@ -24,7 +23,6 @@ export interface AntennaPlacement {
     y: number;
     type: AntennaType;
     radius: number;
-    max_users: number;
     cost: number;
 }
 

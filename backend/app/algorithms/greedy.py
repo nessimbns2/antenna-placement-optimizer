@@ -120,6 +120,25 @@ class GreedyAlgorithm:
                 0 <= y < self.height and
                 (x, y) not in self.houses)
 
+    def antenna_covers_houses(self, x: int, y: int, radius: int) -> bool:
+        """
+        Check if an antenna at (x, y) with given radius covers at least one house.
+
+        Args:
+            x: X coordinate
+            y: Y coordinate
+            radius: Coverage radius
+
+        Returns:
+            True if antenna covers at least one house, False otherwise
+        """
+        for house in self.houses:
+            hx, hy = house
+            dist_sq = (x - hx) * (x - hx) + (y - hy) * (y - hy)
+            if dist_sq <= radius * radius:
+                return True
+        return False
+
     def calculate_score(self, new_users: int, cost: int) -> float:
         """
         Calculate the score for an antenna placement.
@@ -168,6 +187,10 @@ class GreedyAlgorithm:
                     if any(ant['x'] == x and ant['y'] == y for ant in self.placed_antennas):
                         continue
 
+                    # Skip positions that don't cover any houses
+                    if not self.antenna_covers_houses(x, y, spec.radius):
+                        continue
+
                     # Calculate new coverage
                     _, new_users = self.count_new_coverage(x, y, spec.radius)
 
@@ -187,6 +210,35 @@ class GreedyAlgorithm:
             return None
 
         return best_position, best_antenna_type, best_score
+
+    def remove_useless_antennas(self, antennas: List[Dict]) -> List[Dict]:
+        """
+        Remove antennas that don't cover any houses.
+
+        Args:
+            antennas: List of antenna placements
+
+        Returns:
+            Filtered list with only useful antennas
+        """
+        useful_antennas = []
+        removed_count = 0
+
+        for antenna in antennas:
+            if self.antenna_covers_houses(antenna["x"], antenna["y"], antenna["radius"]):
+                useful_antennas.append(antenna)
+            else:
+                removed_count += 1
+                logger.debug(
+                    f"🗑️ Removed useless antenna at ({antenna['x']}, {antenna['y']}) "
+                    f"type={antenna['type']} - covers no houses"
+                )
+
+        if removed_count > 0:
+            logger.info(
+                f"🧹 Cleanup: Removed {removed_count} useless antenna(s)")
+
+        return useful_antennas
 
     def optimize(self) -> Dict:
         """
@@ -241,12 +293,10 @@ class GreedyAlgorithm:
 
             if result is None:
                 users_covered = len(self.covered_houses) * USERS_PER_HOUSE
-                total_capacity = sum(ant["max_users"]
-                                     for ant in self.placed_antennas)
                 logger.warning(
                     f"Could not find valid position for new antenna. "
                     f"Placed {num_antennas} antennas. "
-                    f"Achieved {users_covered}/{total_users} users, capacity: {total_capacity}"
+                    f"Achieved {users_covered}/{total_users} users"
                 )
                 print(f"\n⚠️  No more valid placements available")
                 break
@@ -277,7 +327,6 @@ class GreedyAlgorithm:
                 "y": position[1],
                 "type": antenna_type,
                 "radius": spec.radius,
-                "max_users": spec.max_users,
                 "cost": spec.cost
             }
             self.placed_antennas.append(antenna_data)
@@ -337,6 +386,21 @@ class GreedyAlgorithm:
             f"{coverage_percentage:.2f}% area coverage, "
             f"{users_covered}/{total_users} users covered ({user_coverage_percentage:.2f}%)"
         )
+
+        # Final cleanup: remove any antennas that don't cover houses
+        original_count = len(self.placed_antennas)
+        self.placed_antennas = self.remove_useless_antennas(
+            self.placed_antennas)
+
+        # Recalculate metrics after cleanup if any were removed
+        if len(self.placed_antennas) < original_count:
+            total_cost = sum(ant["cost"] for ant in self.placed_antennas)
+            users_covered = len(self.covered_houses) * USERS_PER_HOUSE
+            total_coverage = len(self.covered_cells) + len(self.covered_houses)
+            coverage_percentage = (total_coverage / (self.width * self.height)
+                                   * 100) if (self.width * self.height) > 0 else 0
+            user_coverage_percentage = (
+                users_covered / total_users * 100) if total_users > 0 else 0
 
         return {
             "antennas": self.placed_antennas,

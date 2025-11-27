@@ -246,7 +246,6 @@ export function ControlPanel({
                   </div>
                   <div className="text-xs text-slate-500 space-y-0.5">
                     <div>Coverage: {spec.radius} cells radius</div>
-                    <div>Capacity: {spec.max_users} users</div>
                   </div>
                 </div>
               ))}
