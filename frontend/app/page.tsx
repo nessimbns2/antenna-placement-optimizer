@@ -700,7 +700,11 @@ export default function Home() {
     setOptimizationResult(null);
   };
 
-  const runOptimization = async () => {
+  const runOptimization = async (params: {
+    mode: "coverage" | "budget";
+    maxBudget?: number;
+    maxAntennas?: number;
+  }) => {
     setIsOptimizing(true);
 
     try {
@@ -734,7 +738,10 @@ export default function Home() {
         body: JSON.stringify({
           width: cols,
           height: rows,
+          optimization_mode: params.mode,
           target_coverage: targetCoverage,
+          max_budget: params.maxBudget,
+          max_antennas: params.maxAntennas,
           obstacles: obstacles,
           algorithm: algorithm,
           allowed_antenna_types: Array.from(allowedAntennaTypes),

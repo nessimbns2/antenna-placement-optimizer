@@ -15,7 +15,11 @@ interface CalculationPanelProps {
   antennaSpecs: AntennaSpec[];
   allowedAntennaTypes: Set<AntennaType>;
   setAllowedAntennaTypes: (types: Set<AntennaType>) => void;
-  onOptimize: () => void;
+  onOptimize: (params: {
+    mode: "coverage" | "budget";
+    maxBudget?: number;
+    maxAntennas?: number;
+  }) => void;
   isOptimizing: boolean;
 }
 
@@ -35,6 +39,10 @@ export function CalculationPanel({
   const [useBudgetLimit, setUseBudgetLimit] = useState(false);
   const [useMaxAntennas, setUseMaxAntennas] = useState(false);
 
+  // Determine optimization mode
+  const isBudgetMode = useBudgetLimit || useMaxAntennas;
+  const isCoverageMode = !isBudgetMode;
+
   const toggleAntennaType = (type: AntennaType) => {
     const newSet = new Set(allowedAntennaTypes);
     if (newSet.has(type)) {
@@ -48,11 +56,27 @@ export function CalculationPanel({
     setAllowedAntennaTypes(newSet);
   };
 
+  const handleOptimize = () => {
+    if (isBudgetMode) {
+      onOptimize({
+        mode: "budget",
+        maxBudget:
+          useBudgetLimit && budgetLimit ? Number(budgetLimit) : undefined,
+        maxAntennas:
+          useMaxAntennas && maxAntennas ? Number(maxAntennas) : undefined,
+      });
+    } else {
+      onOptimize({ mode: "coverage" });
+    }
+  };
+
   const algorithmOptions = [
     {
       value: "greedy",
       label: "Greedy (Fast)",
-      description: "Cost-optimized placement",
+      description: isCoverageMode
+        ? "Cost-optimized placement"
+        : "Coverage-optimized placement",
     },
     {
       value: "genetic",
@@ -94,15 +118,29 @@ export function CalculationPanel({
               step="5"
               value={targetCoverage}
               onChange={(e) => setTargetCoverage(Number(e.target.value))}
-              className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+              disabled={isBudgetMode}
+              className={cn(
+                "w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500",
+                isBudgetMode && "opacity-40 cursor-not-allowed"
+              )}
             />
             <div className="flex justify-between text-xs text-slate-500">
               <span>50%</span>
-              <span className="text-emerald-400 font-bold text-sm">
+              <span
+                className={cn(
+                  "font-bold text-sm",
+                  isCoverageMode ? "text-emerald-400" : "text-slate-600"
+                )}
+              >
                 {targetCoverage}%
               </span>
               <span>100%</span>
             </div>
+            {isBudgetMode && (
+              <div className="text-xs text-amber-400">
+                🔒 Disabled in budget mode
+              </div>
+            )}
           </div>
         </div>
 
@@ -125,7 +163,7 @@ export function CalculationPanel({
                 htmlFor="budget-limit"
                 className="text-xs text-slate-400 cursor-pointer flex-1"
               >
-                Budget Limit
+                Max Budget
               </label>
             </div>
             {useBudgetLimit && (
@@ -179,6 +217,16 @@ export function CalculationPanel({
                   placeholder="50"
                   className="flex-1 bg-slate-950/50 border border-slate-800 rounded px-2 py-1 text-xs focus:ring-2 focus:ring-purple-500 outline-none"
                 />
+              </div>
+            )}
+            {isBudgetMode && (
+              <div className="text-xs text-emerald-400 mt-1">
+                ✓ Budget mode: Max coverage
+              </div>
+            )}
+            {isCoverageMode && (
+              <div className="text-xs text-purple-400 mt-1">
+                ✓ Coverage mode: Min cost
               </div>
             )}
           </div>
@@ -252,7 +300,7 @@ export function CalculationPanel({
         <div className="space-y-2">
           <label className="text-sm text-slate-400 font-medium">Execute</label>
           <button
-            onClick={onOptimize}
+            onClick={handleOptimize}
             disabled={isOptimizing}
             className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-lg font-bold shadow-lg shadow-purple-900/20 flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -268,11 +316,26 @@ export function CalculationPanel({
               </>
             )}
           </button>
-          {(useBudgetLimit || useMaxAntennas) && (
-            <div className="text-xs text-amber-400 mt-2">
-              ⚠️ Constraints active
-            </div>
-          )}
+          <div className="text-xs mt-2 space-y-1">
+            {isCoverageMode && (
+              <div className="text-purple-400">
+                📊 Target: {targetCoverage}% coverage (cheapest)
+              </div>
+            )}
+            {isBudgetMode && (
+              <div className="text-emerald-400">
+                🎯 Goal: Maximum coverage
+                {useBudgetLimit && budgetLimit && (
+                  <span className="block">
+                    💰 Budget: ${budgetLimit.toLocaleString()}
+                  </span>
+                )}
+                {useMaxAntennas && maxAntennas && (
+                  <span className="block">📡 Max antennas: {maxAntennas}</span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
