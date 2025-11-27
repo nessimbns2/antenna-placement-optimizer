@@ -1,102 +1,284 @@
 "use client";
 
-import React from 'react';
-import { cn } from '@/lib/utils';
-import { House, Radio, Signal, Waves } from 'lucide-react';
-import { AntennaType, AntennaPlacement } from '@/lib/api-config';
+import React, { useMemo } from "react";
+import { cn } from "@/lib/utils";
+import { House, Radio, Signal, Waves, Antenna } from "lucide-react";
+import { AntennaType, AntennaPlacement } from "@/lib/api-config";
 
-export type CellType = 'empty' | 'house' | 'antenna' | 'covered';
+export type CellType = "empty" | "house" | "antenna" | "covered";
 
 interface GridMapProps {
-    rows: number;
-    cols: number;
-    grid: CellType[][];
-    onCellClick: (row: number, col: number) => void;
-    coverage: boolean[][];
-    antennaData?: AntennaPlacement[];
+  rows: number;
+  cols: number;
+  grid: CellType[][];
+  onCellClick: (row: number, col: number) => void;
+  coverage: boolean[][];
+  antennaData?: AntennaPlacement[];
+  selectedAntennaType?: AntennaType;
+  manualAntennas?: Map<string, AntennaType>;
+  antennaSpecs?: {
+    type: AntennaType;
+    radius: number;
+    max_users: number;
+    cost: number;
+  }[];
 }
 
-export function GridMap({ rows, cols, grid, onCellClick, coverage, antennaData = [] }: GridMapProps) {
-    // Find antenna at specific position
-    const getAntennaAtPosition = (row: number, col: number): AntennaPlacement | undefined => {
-        return antennaData.find(ant => ant.y === row && ant.x === col);
-    };
+export function GridMap({
+  rows,
+  cols,
+  grid,
+  onCellClick,
+  coverage,
+  antennaData = [],
+  selectedAntennaType = "Pico",
+  manualAntennas = new Map(),
+  antennaSpecs = [],
+}: GridMapProps) {
+  // Adaptive cell size based on grid dimensions
+  const cellSize = useMemo(() => {
+    const maxDimension = Math.max(rows, cols);
+    if (maxDimension > 500) return 8; // Tiny cells for huge grids
+    if (maxDimension > 200) return 12; // Small cells for large grids
+    if (maxDimension > 100) return 20; // Medium cells
+    if (maxDimension > 50) return 30; // Standard cells
+    return 40; // Large cells for small grids
+  }, [rows, cols]);
 
-    // Get antenna styling based on type
-    const getAntennaStyles = (type: AntennaType) => {
-        switch (type) {
-            case 'small':
-                return {
-                    bg: 'bg-cyan-500',
-                    border: 'border-cyan-400',
-                    shadow: 'shadow-[0_0_20px_rgba(6,182,212,0.7)]',
-                    glow: 'shadow-[0_0_30px_rgba(6,182,212,0.5),0_0_40px_rgba(6,182,212,0.3)]',
-                    text: 'text-cyan-100'
-                };
-            case 'medium':
-                return {
-                    bg: 'bg-blue-500',
-                    border: 'border-blue-400',
-                    shadow: 'shadow-[0_0_25px_rgba(59,130,246,0.7)]',
-                    glow: 'shadow-[0_0_35px_rgba(59,130,246,0.5),0_0_45px_rgba(59,130,246,0.3)]',
-                    text: 'text-blue-100'
-                };
-            case 'large':
-                return {
-                    bg: 'bg-purple-500',
-                    border: 'border-purple-400',
-                    shadow: 'shadow-[0_0_30px_rgba(168,85,247,0.8)]',
-                    glow: 'shadow-[0_0_40px_rgba(168,85,247,0.6),0_0_50px_rgba(168,85,247,0.4)]',
-                    text: 'text-purple-100'
-                };
-        }
-    };
+  const isLargeGrid = rows * cols > 10000; // 100x100 threshold
 
-    // Get antenna icon based on type
-    const getAntennaIcon = (type: AntennaType) => {
-        switch (type) {
-            case 'small':
-                return <Radio size={16} strokeWidth={2.5} />;
-            case 'medium':
-                return <Signal size={18} strokeWidth={2.5} />;
-            case 'large':
-                return <Waves size={20} strokeWidth={2.5} />;
-        }
-    };
+  // Find antenna at specific position
+  const getAntennaAtPosition = (
+    row: number,
+    col: number
+  ): AntennaPlacement | undefined => {
+    return antennaData.find((ant) => ant.y === row && ant.x === col);
+  };
 
-    return (
+  // Get antenna styling based on type
+  const getAntennaStyles = (type: AntennaType) => {
+    switch (type) {
+      case "Femto":
+        return {
+          bg: "bg-cyan-500",
+          border: "border-cyan-400",
+          shadow: "shadow-[0_0_20px_rgba(6,182,212,0.7)]",
+          glow: "shadow-[0_0_30px_rgba(6,182,212,0.5),0_0_40px_rgba(6,182,212,0.3)]",
+          text: "text-cyan-100",
+          color: "#06b6d4",
+        };
+      case "Pico":
+        return {
+          bg: "bg-blue-500",
+          border: "border-blue-400",
+          shadow: "shadow-[0_0_25px_rgba(59,130,246,0.7)]",
+          glow: "shadow-[0_0_35px_rgba(59,130,246,0.5),0_0_45px_rgba(59,130,246,0.3)]",
+          text: "text-blue-100",
+          color: "#3b82f6",
+        };
+      case "Micro":
+        return {
+          bg: "bg-purple-500",
+          border: "border-purple-400",
+          shadow: "shadow-[0_0_30px_rgba(168,85,247,0.8)]",
+          glow: "shadow-[0_0_40px_rgba(168,85,247,0.6),0_0_50px_rgba(168,85,247,0.4)]",
+          text: "text-purple-100",
+          color: "#a855f7",
+        };
+      case "Macro":
+        return {
+          bg: "bg-pink-500",
+          border: "border-pink-400",
+          shadow: "shadow-[0_0_35px_rgba(236,72,153,0.8)]",
+          glow: "shadow-[0_0_45px_rgba(236,72,153,0.6),0_0_55px_rgba(236,72,153,0.4)]",
+          text: "text-pink-100",
+          color: "#ec4899",
+        };
+    }
+  }; // Get antenna icon based on type
+  const getAntennaIcon = (type: AntennaType) => {
+    switch (type) {
+      case "Femto":
+        return <Radio size={14} strokeWidth={2.5} />;
+      case "Pico":
+        return <Signal size={16} strokeWidth={2.5} />;
+      case "Micro":
+        return <Waves size={18} strokeWidth={2.5} />;
+      case "Macro":
+        return <Antenna size={20} strokeWidth={2.5} />;
+    }
+  };
+
+  // Collect all antennas for rendering circles
+  const allAntennasForCircles = useMemo(() => {
+    const all: AntennaPlacement[] = [...antennaData];
+
+    manualAntennas.forEach((type, key) => {
+      const [r, c] = key.split(",").map(Number);
+      const spec = antennaSpecs.find((s) => s.type === type);
+      if (spec) {
+        all.push({
+          x: c,
+          y: r,
+          type: type,
+          radius: spec.radius,
+          max_users: spec.max_users,
+          cost: spec.cost,
+        });
+      }
+    });
+
+    return all;
+  }, [antennaData, manualAntennas, antennaSpecs]);
+
+  return (
+    <div className="relative glass-panel rounded-xl p-4">
+      <div
+        className="relative overflow-auto max-h-[800px]"
+        style={{
+          width: Math.min(cols * cellSize, 1600),
+          height: Math.min(rows * cellSize, 800),
+        }}
+      >
         <div
-            className="grid gap-1 p-4 glass-panel rounded-xl overflow-auto max-h-[70vh] max-w-full"
-            style={{
-                gridTemplateColumns: `repeat(${cols}, minmax(2rem, 1fr))`,
-            }}
+          className="relative"
+          style={{
+            width: cols * cellSize,
+            height: rows * cellSize,
+          }}
         >
-            {grid.map((row, r) => (
-                row.map((cell, c) => {
-                    const isCovered = coverage[r]?.[c];
-                    const antennaInfo = cell === 'antenna' ? getAntennaAtPosition(r, c) : undefined;
-                    const antennaStyles = antennaInfo ? getAntennaStyles(antennaInfo.type) : null;
-                    
-                    return (
-                        <div
-                            key={`${r}-${c}`}
-                            onClick={() => onCellClick(r, c)}
-                            className={cn(
-                                "aspect-square rounded-md flex items-center justify-center cursor-pointer transition-all duration-300 border border-slate-800/50 hover:border-slate-600 relative",
-                                cell === 'empty' && isCovered && "bg-emerald-900/20 border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.1)]",
-                                cell === 'empty' && !isCovered && "bg-slate-900/50 hover:bg-slate-800",
-                                cell === 'house' && isCovered && "bg-emerald-500/20 border-emerald-500 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)]",
-                                cell === 'house' && !isCovered && "bg-rose-500/20 border-rose-500 text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.4)]",
-                                cell === 'antenna' && antennaStyles && `${antennaStyles.bg} ${antennaStyles.border} ${antennaStyles.glow} ${antennaStyles.text} z-10 scale-110 animate-pulse`
-                            )}
-                        >
-                            {cell === 'house' && <House size={16} strokeWidth={2.5} />}
-                            {cell === 'antenna' && antennaInfo && getAntennaIcon(antennaInfo.type)}
-                            {cell === 'empty' && isCovered && <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/40" />}
-                        </div>
-                    );
-                })
-            ))}
+          {/* SVG Overlay for coverage circles */}
+          <svg
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              width: cols * cellSize,
+              height: rows * cellSize,
+            }}
+          >
+            <defs>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                <feMerge>
+                  <feMergeNode in="coloredBlur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+
+            {/* Draw individual antenna coverage circles with antenna colors */}
+            {allAntennasForCircles.map((antenna, idx) => {
+              // Account for grid gap (gap-1 = 4px in Tailwind)
+              const gap = isLargeGrid ? 1 : 4;
+              const centerX = antenna.x * (cellSize + gap) + cellSize / 2;
+              const centerY = antenna.y * (cellSize + gap) + cellSize / 2;
+              // Backend returns radius in cells already, add 0.5 to cover full squares
+              const radiusInCells = antenna.radius;
+              const radius = (radiusInCells + 0.5) * cellSize;
+
+              return (
+                <circle
+                  key={`antenna-circle-${antenna.x}-${antenna.y}`}
+                  cx={centerX}
+                  cy={centerY}
+                  r={radius}
+                  fill="rgba(255, 255, 255, 0.08)"
+                  stroke="rgba(255, 255, 255, 0.4)"
+                  strokeWidth="3"
+                  strokeDasharray="8,6"
+                />
+              );
+            })}
+          </svg>
+
+          {/* Grid cells */}
+          <div
+            className={isLargeGrid ? "grid" : "grid gap-1"}
+            style={{
+              gridTemplateColumns: `repeat(${cols}, ${cellSize}px)`,
+              gridTemplateRows: `repeat(${rows}, ${cellSize}px)`,
+              gap: isLargeGrid ? "1px" : undefined,
+            }}
+          >
+            {grid.map((row, r) =>
+              row.map((cell, c) => {
+                const isCovered = coverage[r]?.[c];
+                const antennaInfo =
+                  cell === "antenna" ? getAntennaAtPosition(r, c) : undefined;
+
+                // Use antenna info from optimization, or manual placement map, or fallback to selected type
+                const key = `${r},${c}`;
+                const antennaType =
+                  antennaInfo?.type ||
+                  (cell === "antenna" ? manualAntennas.get(key) : undefined);
+                const antennaStyles = antennaType
+                  ? getAntennaStyles(antennaType)
+                  : null;
+
+                return (
+                  <div
+                    key={`${r}-${c}`}
+                    onClick={() => onCellClick(r, c)}
+                    className={cn(
+                      "flex items-center justify-center cursor-pointer",
+                      isLargeGrid
+                        ? "border-slate-800/30"
+                        : "rounded-md border border-slate-800/50 hover:border-slate-600 relative transition-all duration-300",
+                      cell === "empty" &&
+                        !isCovered &&
+                        (isLargeGrid
+                          ? "bg-slate-900"
+                          : "bg-slate-900/50 hover:bg-slate-800"),
+                      cell === "house" &&
+                        isCovered &&
+                        (isLargeGrid
+                          ? "bg-emerald-500/30 border-emerald-500/50 text-emerald-400"
+                          : "bg-emerald-500/20 border-emerald-500 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.4)]"),
+                      cell === "house" &&
+                        !isCovered &&
+                        (isLargeGrid
+                          ? "bg-rose-500/30 border-rose-500/50 text-rose-400"
+                          : "bg-rose-500/20 border-rose-500 text-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.4)]"),
+                      cell === "antenna" &&
+                        antennaStyles &&
+                        (isLargeGrid
+                          ? `${antennaStyles.bg} ${antennaStyles.border} ${antennaStyles.text} z-10`
+                          : `${antennaStyles.bg} ${antennaStyles.border} ${antennaStyles.glow} ${antennaStyles.text} z-10`)
+                    )}
+                    style={{
+                      width: `${cellSize}px`,
+                      height: `${cellSize}px`,
+                    }}
+                  >
+                    {cell === "house" && !isLargeGrid && (
+                      <House
+                        size={Math.max(8, cellSize * 0.4)}
+                        strokeWidth={2.5}
+                      />
+                    )}
+                    {cell === "house" && isLargeGrid && cellSize >= 12 && (
+                      <House size={8} strokeWidth={3} />
+                    )}
+                    {cell === "antenna" &&
+                      antennaType &&
+                      !isLargeGrid &&
+                      getAntennaIcon(antennaType)}
+                    {cell === "antenna" &&
+                      antennaType &&
+                      isLargeGrid &&
+                      cellSize >= 12 &&
+                      getAntennaIcon(antennaType)}
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
-    );
+      </div>
+      {isLargeGrid && (
+        <div className="mt-2 text-xs text-slate-500 text-center">
+          Large grid mode: Some visual effects disabled for performance
+        </div>
+      )}
+    </div>
+  );
 }

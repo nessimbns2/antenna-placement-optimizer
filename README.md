@@ -34,7 +34,7 @@ antenna-placement-optimizer/
 ### Backend
 - **RESTful API**: Clean, well-documented FastAPI endpoints
 - **Greedy Algorithm**: Fast, efficient antenna placement optimization
-- **Flexible Configuration**: Support for different antenna types (small, medium, large)
+- **Flexible Configuration**: Support for different antenna types (Femto, Pico, Micro, Macro)
 - **User Coverage Tracking**: Optimize for both area and user coverage
 - **Production Ready**: Comprehensive error handling and logging
 
@@ -125,7 +125,7 @@ curl -X POST "http://localhost:8000/optimize" \
     "width": 10,
     "height": 10,
     "num_antennas": 3,
-    "antenna_type": "medium",
+    "antenna_type": "Pico",
     "obstacles": [[2, 3], [5, 5], [7, 8]],
     "algorithm": "greedy"
   }'

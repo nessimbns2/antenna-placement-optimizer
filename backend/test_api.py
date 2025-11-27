@@ -6,11 +6,13 @@ import json
 
 BASE_URL = "http://localhost:8000"
 
+
 def test_health():
     """Test health endpoint"""
     print("🔍 Testing health endpoint...")
     response = requests.get(f"{BASE_URL}/health")
     print(f"✅ Health: {response.json()}\n")
+
 
 def test_antenna_types():
     """Test antenna types endpoint"""
@@ -19,36 +21,61 @@ def test_antenna_types():
     data = response.json()
     print(f"✅ Available antenna types:")
     for antenna in data["antenna_types"]:
-        print(f"   - {antenna['type']}: radius={antenna['radius']}, max_users={antenna['max_users']}")
+        print(
+            f"   - {antenna['type']}: radius={antenna['radius']}, max_users={antenna['max_users']}")
     print(f"   - Users per house: {data['users_per_house']}\n")
 
-def test_optimization(antenna_type="medium"):
-    """Test optimization endpoint with different antenna types"""
-    print(f"🔍 Testing optimization with {antenna_type} antenna...")
-    
-    # Create a test scenario: 10x10 grid with 3 houses
+
+def test_optimization(target_coverage=95, grid_size=20):
+    """Test optimization endpoint with different target coverage levels"""
+    print(
+        f"🔍 Testing optimization with {target_coverage}% target coverage on {grid_size}x{grid_size} grid...")
+
+    # Create a test scenario with multiple houses
+    # Generate houses in a pattern
+    obstacles = []
+    for i in range(5):
+        for j in range(5):
+            obstacles.append([i * 4 + 2, j * 4 + 2])
+
     data = {
-        "width": 10,
-        "height": 10,
-        "num_antennas": 2,
-        "antenna_type": antenna_type,
-        "obstacles": [[2, 3], [5, 5], [7, 8]],  # 3 houses = 30 users total
+        "width": grid_size,
+        "height": grid_size,
+        "target_coverage": target_coverage,
+        "obstacles": obstacles,  # Multiple houses
         "algorithm": "greedy"
     }
-    
+
+    print(f"   Houses: {len(obstacles)} (total users: {len(obstacles) * 20})")
+
     response = requests.post(f"{BASE_URL}/optimize", json=data)
+
+    if not response.ok:
+        print(f"❌ Error: {response.status_code}")
+        print(f"   {response.text}")
+        return
+
     result = response.json()
-    
-    print(f"✅ Optimization Results ({antenna_type}):")
+
+    print(f"✅ Optimization Results (Target: {target_coverage}%):")
     print(f"   Antennas placed: {len(result['antennas'])}")
-    for i, antenna in enumerate(result['antennas'], 1):
-        print(f"   - Antenna {i}: ({antenna['x']}, {antenna['y']}) - {antenna['type']} (radius={antenna['radius']}, capacity={antenna['max_users']})")
-    print(f"   Area coverage: {result['coverage_percentage']}%")
-    print(f"   Users covered: {result['users_covered']}/{result['total_users']} ({result['user_coverage_percentage']}%)")
+    antenna_types = {}
+    for antenna in result['antennas']:
+        antenna_types[antenna['type']] = antenna_types.get(
+            antenna['type'], 0) + 1
+
+    for ant_type, count in antenna_types.items():
+        print(f"   - {ant_type}: {count}")
+
+    print(f"   Area coverage: {result['coverage_percentage']:.2f}%")
+    print(
+        f"   Users covered: {result['users_covered']}/{result['total_users']} ({result['user_coverage_percentage']:.2f}%)")
     print(f"   Total capacity: {result['total_capacity']} users")
-    print(f"   Capacity utilization: {result['capacity_utilization']}%")
-    print(f"   Execution time: {result['execution_time_ms']}ms")
+    print(f"   Capacity utilization: {result['capacity_utilization']:.2f}%")
+    print(f"   Total cost: ${result['total_cost']:,}")
+    print(f"   Execution time: {result['execution_time_ms']:.2f}ms")
     print()
+
 
 def main():
     """Run all tests"""
@@ -56,24 +83,25 @@ def main():
     print("🚀 Antenna Placement API - Test Suite")
     print("=" * 60)
     print()
-    
+
     try:
         test_health()
         test_antenna_types()
-        
-        # Test with different antenna types
-        test_optimization("small")
-        test_optimization("medium")
-        test_optimization("large")
-        
+
+        # Test with different target coverage levels
+        test_optimization(target_coverage=80, grid_size=20)
+        test_optimization(target_coverage=95, grid_size=20)
+        test_optimization(target_coverage=100, grid_size=15)
+
         print("=" * 60)
         print("✅ All tests completed successfully!")
         print("=" * 60)
-        
+
     except Exception as e:
         print(f"❌ Error: {e}")
         import traceback
         traceback.print_exc()
+
 
 if __name__ == "__main__":
     main()

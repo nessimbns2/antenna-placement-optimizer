@@ -104,25 +104,35 @@ Get available antenna types and their specifications.
 {
   "antenna_types": [
     {
-      "type": "small",
-      "radius": 2,
-      "max_users": 50,
-      "description": "Coverage radius: 2, Max users: 50"
+      "type": "Femto",
+      "radius": 1,
+      "max_users": 20,
+      "cost": 1000,
+      "description": "Coverage radius: 1 cells, Max users: 20, Cost: $1,000"
     },
     {
-      "type": "medium",
-      "radius": 3,
+      "type": "Pico",
+      "radius": 6,
       "max_users": 100,
-      "description": "Coverage radius: 3, Max users: 100"
+      "cost": 5000,
+      "description": "Coverage radius: 6 cells, Max users: 100, Cost: $5,000"
     },
     {
-      "type": "large",
-      "radius": 4,
-      "max_users": 200,
-      "description": "Coverage radius: 4, Max users: 200"
+      "type": "Micro",
+      "radius": 40,
+      "max_users": 500,
+      "cost": 12000,
+      "description": "Coverage radius: 40 cells, Max users: 500, Cost: $12,000"
+    },
+    {
+      "type": "Macro",
+      "radius": 100,
+      "max_users": 2000,
+      "cost": 25000,
+      "description": "Coverage radius: 100 cells, Max users: 2000, Cost: $25,000"
     }
   ],
-  "users_per_house": 10
+  "users_per_house": 20
 }
 ```
 
@@ -140,7 +150,7 @@ Optimize antenna placement on a grid with houses containing users.
   "width": 10,
   "height": 10,
   "num_antennas": 3,
-  "antenna_type": "medium",
+  "antenna_type": "Pico",
   "obstacles": [[2, 3], [5, 5], [7, 8]],
   "algorithm": "greedy"
 }
@@ -150,10 +160,11 @@ Optimize antenna placement on a grid with houses containing users.
 - `width` (integer, required): Grid width (> 0)
 - `height` (integer, required): Grid height (> 0)
 - `num_antennas` (integer, required): Number of antennas to place (> 0)
-- `antenna_type` (string, optional): Type of antenna (default: "medium")
-  - `"small"`: radius=2, max_users=50
-  - `"medium"`: radius=3, max_users=100
-  - `"large"`: radius=4, max_users=200
+- `antenna_type` (string, optional): Type of antenna (default: "Pico")
+  - `"Femto"`: radius=1, max_users=20, cost=$1,000
+  - `"Pico"`: radius=6, max_users=100, cost=$5,000
+  - `"Micro"`: radius=40, max_users=500, cost=$12,000
+  - `"Macro"`: radius=100, max_users=2000, cost=$25,000
 - `obstacles` (array, optional): List of house coordinates `[x, y]`. Each house contains 10 users. Antennas cannot be placed on houses.
 - `algorithm` (string, optional): Algorithm to use (default: "greedy")
   - Available: `"greedy"` (more algorithms coming soon)
@@ -301,9 +312,9 @@ The greedy algorithm places antennas one at a time, always choosing the position
 3. Track both area coverage and user coverage
 
 **Key Features:**
-- **Antenna Types**: Choose from small (r=2, 50 users), medium (r=3, 100 users), or large (r=4, 200 users)
+- **Antenna Types**: Choose from Femto (r=1, 20 users), Pico (r=6, 100 users), Micro (r=40, 500 users), or Macro (r=100, 2000 users)
 - **User-Focused**: Prioritizes covering houses (users) over empty grid cells
-- **House Rules**: Each house contains 10 users; antennas cannot be placed on houses
+- **House Rules**: Each house contains 20 users; antennas cannot be placed on houses
 - **Capacity Tracking**: Monitors if antenna capacity meets user demand
 
 **Complexity:**
@@ -348,12 +359,12 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 ## 📝 Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PORT` | Server port | `8000` |
-| `HOST` | Server host | `0.0.0.0` |
-| `CORS_ORIGINS` | Allowed CORS origins (comma-separated) | `http://localhost:3000` |
-| `LOG_LEVEL` | Logging level (DEBUG, INFO, WARNING, ERROR) | `INFO` |
+| Variable       | Description                                 | Default                 |
+| -------------- | ------------------------------------------- | ----------------------- |
+| `PORT`         | Server port                                 | `8000`                  |
+| `HOST`         | Server host                                 | `0.0.0.0`               |
+| `CORS_ORIGINS` | Allowed CORS origins (comma-separated)      | `http://localhost:3000` |
+| `LOG_LEVEL`    | Logging level (DEBUG, INFO, WARNING, ERROR) | `INFO`                  |
 
 ## 🧪 Development
 
