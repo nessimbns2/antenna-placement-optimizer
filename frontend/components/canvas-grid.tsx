@@ -40,6 +40,7 @@ export function CanvasGrid({
 }: CanvasGridProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [hoveredCell, setHoveredCell] = useState<{
     row: number;
     col: number;
@@ -95,17 +96,17 @@ export function CanvasGrid({
   // Draw the grid with viewport culling
   const drawGrid = useCallback(() => {
     const canvas = canvasRef.current;
-    const container = containerRef.current;
-    if (!canvas || !container) return;
+    const scrollContainer = scrollContainerRef.current;
+    if (!canvas || !scrollContainer) return;
 
     const ctx = canvas.getContext("2d", { alpha: false });
     if (!ctx) return;
 
     // Get visible viewport bounds
-    const scrollLeft = container.scrollLeft;
-    const scrollTop = container.scrollTop;
-    const viewportWidth = container.clientWidth;
-    const viewportHeight = container.clientHeight;
+    const scrollLeft = scrollContainer.scrollLeft;
+    const scrollTop = scrollContainer.scrollTop;
+    const viewportWidth = scrollContainer.clientWidth;
+    const viewportHeight = scrollContainer.clientHeight;
 
     // Calculate which cells are visible (with larger buffer to prevent clipping)
     const startCol = Math.max(0, Math.floor(scrollLeft / cellSize) - 2);
@@ -268,13 +269,13 @@ export function CanvasGrid({
   useEffect(() => {
     drawGrid();
 
-    const container = containerRef.current;
-    if (!container) return;
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
 
     const handleScroll = () => drawGrid();
-    container.addEventListener("scroll", handleScroll);
+    scrollContainer.addEventListener("scroll", handleScroll);
 
-    return () => container.removeEventListener("scroll", handleScroll);
+    return () => scrollContainer.removeEventListener("scroll", handleScroll);
   }, [drawGrid]);
 
   // Zoom controls
@@ -481,7 +482,7 @@ export function CanvasGrid({
       </div>
 
       <div
-        ref={containerRef}
+        ref={scrollContainerRef}
         className={`overflow-auto ${isFullscreen ? "h-screen w-screen" : "max-h-[800px] max-w-full"}`}
       >
         <canvas
