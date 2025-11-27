@@ -14,7 +14,7 @@ USERS_PER_HOUSE = 20  # Each house contains 20 users
 # Penalty per uncovered user (higher = prioritize coverage more)
 UNCOVERED_USER_PENALTY = 10.0
 # Cost normalization factor (lower = prioritize cost reduction more)
-COST_DIVISOR = 5000
+COST_DIVISOR = 1000
 # Cost optimization levels:
 #   - 100000: Light cost optimization (~$250-300k solutions)
 #   - 50000:  Moderate cost optimization (~$180-250k solutions)
@@ -32,9 +32,9 @@ OPERATION_WEIGHT_CHANGE_TYPE = 15  # Weight for changing antenna types
 
 # Initial solution generation parameters
 # Probability of choosing largest antenna type (0.0-1.0)
-INITIAL_LARGE_ANTENNA_BIAS = 0.4
+INITIAL_LARGE_ANTENNA_BIAS = 0.5
 # Maximum number of antennas in initial solution
-MAX_INITIAL_ANTENNAS = 10
+MAX_INITIAL_ANTENNAS = 5
 
 # Convergence and stopping criteria
 # Stop optimization if no improvement after this many iterations (prevents wasted computation)
