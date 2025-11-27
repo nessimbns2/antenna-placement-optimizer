@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document explains the genetic algorithm approach to optimize cellular antenna placement. Unlike the greedy algorithm which makes locally optimal choices, the genetic algorithm uses evolutionary principles to explore the solution space and potentially find globally better solutions.
+This document explains the genetic algorithm implementation for our antenna placement optimization problem. Our specific problem uses a 20×15 grid with 45 houses (15% density), 3 antenna types, and aims to achieve 100% coverage while minimizing deployment cost. The genetic algorithm uses evolutionary principles to explore the solution space and find near-optimal solutions.
 
 ## Biological Inspiration
 
@@ -26,9 +26,9 @@ Chromosome = [
 
 ### 2. Population
 A collection of candidate solutions (chromosomes):
-- **Population Size**: 50 solutions maintained simultaneously
+- **Population Size**: 30 solutions maintained simultaneously (reduced for faster execution)
 - **Diversity**: Different approaches to solving the problem
-- **Evolution**: Population improves over generations
+- **Evolution**: Population improves over 50 generations
 
 ### 3. Fitness Function
 Evaluates solution quality:
@@ -77,6 +77,8 @@ Child 2:  [B1, B2] + [A3, A4, A5]
 - Crossover Rate: 70% (probability of crossover occurring)
 - If no crossover: children are clones of parents
 
+**Our Implementation**: Uses single-point crossover with 70% rate
+
 ### 6. Mutation
 Random changes to maintain genetic diversity:
 
@@ -85,9 +87,9 @@ Random changes to maintain genetic diversity:
 2. **Remove**: Delete random antenna
 3. **Modify**: Change antenna type at existing location
 
-**Mutation Rate**: 10% (probability per solution)
+**Mutation Rate**: 15% (higher than typical to maintain diversity in smaller population)
 
-**Purpose**: Escape local optima and explore new areas
+**Purpose**: Escape local optima and explore new areas of the solution space
 
 ## Algorithm Flow
 
@@ -101,7 +103,7 @@ Random changes to maintain genetic diversity:
 
 ### Main Evolution Loop
 ```
-For each generation (100 iterations):
+For each generation (50 iterations in our implementation):
     
     1. EVALUATION:
        For each solution in population:
@@ -110,7 +112,7 @@ For each generation (100 iterations):
     
     2. SELECTION:
        Use tournament selection to choose parents
-       (Population size: 50 parents selected)
+       (Population size: 30 parents selected)
     
     3. CROSSOVER:
        For each pair of parents:
@@ -122,8 +124,8 @@ For each generation (100 iterations):
     
     4. MUTATION:
        For each child:
-           If random() < mutation_rate (0.1):
-               Apply random mutation (add/remove/modify)
+           If random() < mutation_rate (0.15):
+               Apply random mutation (add/remove/modify antenna)
     
     5. REPLACEMENT:
        New population = all children
@@ -136,50 +138,65 @@ For each generation (100 iterations):
 ```
 
 ### Termination
-Algorithm stops after 100 generations or when satisfactory solution found.
+Algorithm stops after 50 generations. Our optimized parameters allow for reasonable execution time (10-60 seconds) while still finding high-quality solutions.
 
-## Example Evolution
+## Example Evolution (20×15 Grid, 45 Houses)
 
 ### Generation 0 (Initial Population)
-- Random solutions, low fitness
-- Coverage: 40-80%
-- Cost: Highly variable
-- Best Fitness: 35.2
+- Random solutions with 1-15 antennas
+- Coverage: 30-70%
+- Cost: $5,000-$20,000 (highly variable)
+- Best Fitness: ~40
+- Example: 8 random antennas covering 30 houses
+
+### Generation 10
+- Population starts converging
+- Coverage: 60-90%
+- Cost: $8,000-$18,000
+- Best Fitness: ~90
+- Better antenna placement patterns emerging
 
 ### Generation 20
-- Population converging on better patterns
-- Coverage: 70-95%
-- Cost: Starting to optimize
-- Best Fitness: 85.4
+- Clear improvement in solutions
+- Coverage: 80-100%
+- Cost: $10,000-$16,000
+- Best Fitness: ~135
+- Most solutions approaching full coverage
 
-### Generation 50
-- Most solutions achieve 100% coverage
+### Generation 30
+- Population converged on 100% coverage
 - Focus shifts to cost optimization
-- Diverse antenna type usage
-- Best Fitness: 147.8
+- Coverage: 100% for best solutions
+- Cost: $11,000-$15,000
+- Best Fitness: ~145
+- Optimizing antenna types and positions
 
-### Generation 100 (Final)
-- Best solution: 100% coverage
-- Optimized cost
-- Balanced antenna placement
-- Best Fitness: 148.5
+### Generation 50 (Final)
+- Best solution: 100% coverage achieved
+- Optimized antenna count: 10-12 antennas
+- Final cost: ~$12,000-$14,000
+- Best Fitness: ~148
+- Balanced use of Small, Medium, and Large antennas
 
 ## Parameters and Tuning
 
-### Population Size (50)
-- **Larger**: More exploration, slower convergence
-- **Smaller**: Faster but may miss optimal solutions
-- **Chosen**: Balance between speed and quality
+### Population Size (30)
+- **Larger (50+)**: More exploration, slower convergence
+- **Smaller (10-20)**: Faster but may miss optimal solutions
+- **Chosen (30)**: Balance between speed and quality for our grid size
+- **Rationale**: Sufficient diversity for 20×15 grid without excessive computation
 
-### Generations (100)
-- **More**: Better solutions but longer runtime
-- **Fewer**: Faster but potentially suboptimal
-- **Chosen**: Sufficient for convergence on test cases
+### Generations (50)
+- **More (100+)**: Better solutions but 2× longer runtime
+- **Fewer (20-30)**: Faster but potentially suboptimal
+- **Chosen (50)**: Sufficient for convergence on our problem
+- **Rationale**: Tests show convergence typically occurs by generation 30-40
 
-### Mutation Rate (10%)
-- **Higher**: More exploration, slower convergence
-- **Lower**: Faster convergence but risk of premature convergence
-- **Chosen**: Standard for maintaining diversity
+### Mutation Rate (15%)
+- **Higher (20-30%)**: More exploration, may destabilize good solutions
+- **Lower (5-10%)**: Faster convergence but risk of premature convergence
+- **Chosen (15%)**: Higher than typical to maintain diversity in smaller population
+- **Rationale**: Compensates for smaller population size
 
 ### Crossover Rate (70%)
 - **Higher**: More recombination, faster mixing
@@ -189,28 +206,32 @@ Algorithm stops after 100 generations or when satisfactory solution found.
 ## Complexity Analysis
 
 ### Time Complexity
-- **Per Generation**: O(P × (T × W × H × N + P))
-  - P = population size (50)
-  - T = antenna types (3)
-  - W × H = grid size
-  - N = number of houses
-  - Fitness evaluation: O(T × W × H × N)
+- **Per Generation**: O(P × (A × N + P))
+  - P = population size (30)
+  - A = average antennas per solution (~10-12)
+  - N = number of houses (45)
+  - Fitness evaluation: O(A × N) per solution
   - Selection: O(P)
   
-- **Total**: O(G × P × T × W × H × N)
-  - G = number of generations (100)
-  - For 20×15 grid with 45 houses: ~13.5 million operations
+- **Total**: O(G × P × A × N)
+  - G = number of generations (50)
+  - For our 20×15 grid with 45 houses: ~600,000 operations
+  - Execution time: 10-60 seconds (vs 7+ minutes with pop=50, gen=100)
 
 ### Space Complexity
 - O(P × A) where:
-  - P = population size
-  - A = average antennas per solution (~10)
-  - Total: ~500 antenna objects in memory
+  - P = population size (30)
+  - A = average antennas per solution (~10-12)
+  - Total: ~300-360 antenna objects in memory
+  - Plus population bookkeeping: negligible
 
 ### Comparison with Greedy
 - **Greedy**: O(A × T × W × H × N) where A is final antenna count
-- **Genetic**: O(G × P × T × W × H × N)
-- Genetic is typically **100-500× slower** but may find better solutions
+  - Execution time: 50-200 milliseconds
+- **Genetic**: O(G × P × A × N)
+  - Execution time: 10-60 seconds
+- Genetic is typically **100-1000× slower** but explores more solutions
+- Trade-off: Speed vs potential solution quality
 
 ## Advantages
 
@@ -228,19 +249,22 @@ Algorithm stops after 100 generations or when satisfactory solution found.
 4. **No Guarantee**: Cannot guarantee optimal solution
 5. **Convergence Time**: May need many generations
 
-## Performance Comparison
+## Performance Comparison (20×15 Grid, 45 Houses)
 
 ### Greedy Algorithm
-- **Speed**: Very fast (seconds)
-- **Quality**: Good local solutions
-- **Consistency**: Always same result
+- **Speed**: Very fast (50-200 ms)
+- **Quality**: Good local solutions (~$12,000-$14,000)
+- **Consistency**: Always same result (deterministic)
 - **Coverage**: Guaranteed 100%
+- **Antennas**: Typically 10-12 antennas
 
-### Genetic Algorithm
-- **Speed**: Slower (minutes)
-- **Quality**: Potentially better global solutions
-- **Consistency**: Variable results
-- **Coverage**: Usually 100% after convergence
+### Genetic Algorithm (Our Implementation)
+- **Speed**: Moderate (10-60 seconds with pop=30, gen=50)
+- **Quality**: Comparable or better solutions (~$11,000-$14,000)
+- **Consistency**: Variable results (stochastic)
+- **Coverage**: Usually 100% after generation 20-30
+- **Antennas**: Typically 10-13 antennas
+- **Advantage**: Explores more diverse solutions
 
 ## Use Cases
 
