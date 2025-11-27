@@ -5,27 +5,26 @@ from enum import Enum
 
 class AntennaType(str, Enum):
     """Antenna types with different specifications."""
-    FEMTO = "Femto"    # Radius: 2, Max users: 20, Cost: $200
-    PICO = "Pico"      # Radius: 5, Max users: 300, Cost: $2,100
-    MICRO = "Micro"    # Radius: 15, Max users: 1200, Cost: $6,000
-    MACRO = "Macro"    # Radius: 40, Max users: 4000, Cost: $30,000
+    FEMTO = "Femto"    # Radius: 2, Cost: $200
+    PICO = "Pico"      # Radius: 5, Cost: $2,100
+    MICRO = "Micro"    # Radius: 15, Cost: $6,000
+    MACRO = "Macro"    # Radius: 40, Cost: $30,000
 
 
 class AntennaSpec(BaseModel):
     """Antenna specifications."""
     type: AntennaType
     radius: int
-    max_users: int
     cost: int
 
 
 # Predefined antenna specifications with costs
 # Based on grid system where 1 square = 50 meters
 ANTENNA_SPECS: Dict[AntennaType, AntennaSpec] = {
-    AntennaType.FEMTO: AntennaSpec(type=AntennaType.FEMTO, radius=2, max_users=20, cost=200),
-    AntennaType.PICO: AntennaSpec(type=AntennaType.PICO, radius=5, max_users=300, cost=2100),
-    AntennaType.MICRO: AntennaSpec(type=AntennaType.MICRO, radius=15, max_users=1200, cost=6000),
-    AntennaType.MACRO: AntennaSpec(type=AntennaType.MACRO, radius=40, max_users=4000, cost=30000),
+    AntennaType.FEMTO: AntennaSpec(type=AntennaType.FEMTO, radius=2, cost=200),
+    AntennaType.PICO: AntennaSpec(type=AntennaType.PICO, radius=5, cost=2100),
+    AntennaType.MICRO: AntennaSpec(type=AntennaType.MICRO, radius=15, cost=6000),
+    AntennaType.MACRO: AntennaSpec(type=AntennaType.MACRO, radius=40, cost=30000),
 }
 
 USERS_PER_HOUSE = 20  # Each house contains 20 users
@@ -88,8 +87,6 @@ class AntennaPlacement(BaseModel):
     y: int = Field(..., description="Y coordinate")
     type: AntennaType = Field(..., description="Antenna type")
     radius: int = Field(..., description="Coverage radius")
-    max_users: int = Field(...,
-                           description="Maximum users this antenna can serve")
     cost: int = Field(..., description="Cost of this antenna")
 
 

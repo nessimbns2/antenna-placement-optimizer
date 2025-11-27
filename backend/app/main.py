@@ -72,9 +72,8 @@ async def get_antenna_types():
             {
                 "type": spec.type.value,
                 "radius": spec.radius,
-                "max_users": spec.max_users,
                 "cost": spec.cost,
-                "description": f"Coverage radius: {spec.radius} cells, Max users: {spec.max_users}, Cost: ${spec.cost:,}"
+                "description": f"Coverage radius: {spec.radius} cells, Cost: ${spec.cost:,}"
             }
             for spec in ANTENNA_SPECS.values()
         ],
@@ -161,7 +160,6 @@ async def optimize_antenna_placement(request: OptimizationRequest) -> Optimizati
                 y=ant["y"],
                 type=ant["type"],
                 radius=ant["radius"],
-                max_users=ant["max_users"],
                 cost=ant["cost"]
             )
             for ant in result["antennas"]

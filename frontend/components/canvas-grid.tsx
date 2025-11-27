@@ -23,7 +23,6 @@ interface CanvasGridProps {
   antennaSpecs?: {
     type: AntennaType;
     radius: number;
-    max_users: number;
     cost: number;
   }[];
   largePixels?: boolean;
@@ -80,9 +79,9 @@ export function CanvasGrid({
         }; // Purple
       case "Macro":
         return {
-          fill: "rgba(34, 197, 94, 0.12)",
-          stroke: "rgba(34, 197, 94, 0.5)",
-        }; // Green
+          fill: "rgba(6, 182, 212, 0.12)",
+          stroke: "rgba(6, 182, 212, 0.5)",
+        }; // Cyan
       default:
         return {
           fill: "rgba(255, 255, 255, 0.08)",

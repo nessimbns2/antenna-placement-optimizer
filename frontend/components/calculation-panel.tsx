@@ -57,7 +57,7 @@ export function CalculationPanel({
     {
       value: "greedy",
       label: "Greedy (Fast)",
-      description: "Score-based placement (Coverage + Capacity - Waste) / Cost",
+      description: "Score-based placement (users covered / cost)",
     },
     {
       value: "genetic",
