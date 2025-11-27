@@ -14,7 +14,7 @@ USERS_PER_HOUSE = 20  # Each house contains 20 users
 # Penalty per uncovered user (higher = prioritize coverage more)
 UNCOVERED_USER_PENALTY = 10.0
 # Cost normalization factor (lower = prioritize cost reduction more)
-COST_DIVISOR = 25000.0
+COST_DIVISOR = 5000
 # Cost optimization levels:
 #   - 100000: Light cost optimization (~$250-300k solutions)
 #   - 50000:  Moderate cost optimization (~$180-250k solutions)
@@ -32,8 +32,13 @@ OPERATION_WEIGHT_CHANGE_TYPE = 15  # Weight for changing antenna types
 
 # Initial solution generation parameters
 # Probability of choosing largest antenna type (0.0-1.0)
-INITIAL_LARGE_ANTENNA_BIAS = 0.6
-MAX_INITIAL_ANTENNAS = 10         # Maximum number of antennas in initial solution
+INITIAL_LARGE_ANTENNA_BIAS = 0.4
+# Maximum number of antennas in initial solution
+MAX_INITIAL_ANTENNAS = 10
+
+# Convergence and stopping criteria
+# Stop optimization if no improvement after this many iterations (prevents wasted computation)
+DEFAULT_EARLY_STOPPING_ITERATIONS = 5000
 
 
 class SimulatedAnnealingAlgorithm:
@@ -53,7 +58,7 @@ class SimulatedAnnealingAlgorithm:
         min_temperature: float = 0.1,
         iterations_per_temp: int = 100,
         random_seed: int | None = None,
-        early_stopping_iterations: int | None = 1000
+        early_stopping_iterations: int | None = DEFAULT_EARLY_STOPPING_ITERATIONS
     ):
         """
         Initialize the simulated annealing algorithm.
