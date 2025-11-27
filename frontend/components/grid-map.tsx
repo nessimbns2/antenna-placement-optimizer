@@ -175,9 +175,9 @@ export function GridMap({
               const gap = isLargeGrid ? 1 : 4;
               const centerX = antenna.x * (cellSize + gap) + cellSize / 2;
               const centerY = antenna.y * (cellSize + gap) + cellSize / 2;
-              // Backend returns radius in cells already, add 0.5 to cover full squares
+              // Backend returns radius in cells, multiply by cellSize + gap for visual radius
               const radiusInCells = antenna.radius;
-              const radius = (radiusInCells + 0.5) * cellSize;
+              const radius = radiusInCells * (cellSize + gap);
 
               return (
                 <circle
