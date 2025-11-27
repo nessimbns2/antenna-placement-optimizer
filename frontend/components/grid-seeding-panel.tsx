@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { MapPin, Radio, Trash2 } from "lucide-react";
+import { MapPin, Radio, Trash2, Download, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AntennaType } from "@/lib/api-config";
 
@@ -20,6 +20,8 @@ interface GridSeedingPanelProps {
   isFullscreen: boolean;
   setIsFullscreen: (v: boolean) => void;
   totalCells: number;
+  onExport?: () => void;
+  onImport?: (file: File) => void;
 }
 
 export function GridSeedingPanel({
@@ -37,7 +39,24 @@ export function GridSeedingPanel({
   isFullscreen,
   setIsFullscreen,
   totalCells,
+  onExport,
+  onImport,
 }: GridSeedingPanelProps) {
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && onImport) {
+      onImport(file);
+    }
+    // Reset input so same file can be selected again
+    e.target.value = "";
+  };
+
   const patterns = [
     { value: "random", label: "🎲 Random Pattern" },
     { value: "circular_clusters", label: "🔵 Circular Clusters" },
@@ -219,6 +238,31 @@ export function GridSeedingPanel({
           >
             <Trash2 size={14} /> Clear
           </button>
+          {onExport && (
+            <button
+              onClick={onExport}
+              className="w-full py-2 bg-slate-800 hover:bg-emerald-900/20 hover:text-emerald-400 text-slate-300 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2"
+            >
+              <Download size={14} /> Export
+            </button>
+          )}
+          {onImport && (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <button
+                onClick={handleImportClick}
+                className="w-full py-2 bg-slate-800 hover:bg-blue-900/20 hover:text-blue-400 text-slate-300 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2"
+              >
+                <Upload size={14} /> Import
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
