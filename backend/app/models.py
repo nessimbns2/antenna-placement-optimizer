@@ -11,12 +11,6 @@ class AntennaType(str, Enum):
     MACRO = "Macro"    # Radius: 80, Max users: 2400, Cost: $14,400
 
 
-class OptimizationMode(str, Enum):
-    """Optimization mode determines how the algorithm optimizes."""
-    COVERAGE = "coverage"  # Optimize for target coverage with minimum cost
-    BUDGET = "budget"      # Maximize coverage within budget/antenna constraints
-
-
 class AntennaSpec(BaseModel):
     """Antenna specifications."""
     type: AntennaType
@@ -42,29 +36,19 @@ class OptimizationRequest(BaseModel):
 
     width: int = Field(..., gt=0, description="Grid width")
     height: int = Field(..., gt=0, description="Grid height")
-    optimization_mode: OptimizationMode = Field(
-        default=OptimizationMode.COVERAGE,
-        description="Optimization mode: 'coverage' for target coverage with minimum cost, 'budget' for maximum coverage within constraints"
-    )
-    target_coverage: float = Field(
-        default=95.0,
-        ge=0,
-        le=100,
-        description="Target user coverage percentage (0-100). Used when optimization_mode='coverage'."
-    )
     max_budget: Optional[int] = Field(
         default=None,
         gt=0,
-        description="Maximum budget constraint in dollars. Used when optimization_mode='budget'."
+        description="Maximum budget constraint in dollars (optional)"
     )
     max_antennas: Optional[int] = Field(
         default=None,
         gt=0,
-        description="Maximum number of antennas constraint. Used when optimization_mode='budget'."
+        description="Maximum number of antennas constraint (optional)"
     )
     obstacles: List[Tuple[int, int]] = Field(
         default_factory=list,
-        description="List of house coordinates (x, y) - each house has 10 users. Antennas cannot be placed on houses."
+        description="List of house coordinates (x, y) - each house has 20 users. Antennas cannot be placed on houses."
     )
     algorithm: str = Field(
         default="greedy",

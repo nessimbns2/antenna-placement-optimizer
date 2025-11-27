@@ -6,8 +6,6 @@ import { cn } from "@/lib/utils";
 import { AntennaType, AntennaSpec } from "@/lib/api-config";
 
 interface CalculationPanelProps {
-  targetCoverage: number;
-  setTargetCoverage: (v: number) => void;
   algorithm: "greedy" | "genetic" | "simulated-annealing" | "brute-force";
   setAlgorithm: (
     a: "greedy" | "genetic" | "simulated-annealing" | "brute-force"
@@ -15,17 +13,11 @@ interface CalculationPanelProps {
   antennaSpecs: AntennaSpec[];
   allowedAntennaTypes: Set<AntennaType>;
   setAllowedAntennaTypes: (types: Set<AntennaType>) => void;
-  onOptimize: (params: {
-    mode: "coverage" | "budget";
-    maxBudget?: number;
-    maxAntennas?: number;
-  }) => void;
+  onOptimize: (params: { maxBudget?: number; maxAntennas?: number }) => void;
   isOptimizing: boolean;
 }
 
 export function CalculationPanel({
-  targetCoverage,
-  setTargetCoverage,
   algorithm,
   setAlgorithm,
   antennaSpecs,
@@ -38,10 +30,6 @@ export function CalculationPanel({
   const [maxAntennas, setMaxAntennas] = useState<number | "">(50);
   const [useBudgetLimit, setUseBudgetLimit] = useState(false);
   const [useMaxAntennas, setUseMaxAntennas] = useState(false);
-
-  // Determine optimization mode
-  const isBudgetMode = useBudgetLimit || useMaxAntennas;
-  const isCoverageMode = !isBudgetMode;
 
   const toggleAntennaType = (type: AntennaType) => {
     const newSet = new Set(allowedAntennaTypes);
@@ -57,26 +45,19 @@ export function CalculationPanel({
   };
 
   const handleOptimize = () => {
-    if (isBudgetMode) {
-      onOptimize({
-        mode: "budget",
-        maxBudget:
-          useBudgetLimit && budgetLimit ? Number(budgetLimit) : undefined,
-        maxAntennas:
-          useMaxAntennas && maxAntennas ? Number(maxAntennas) : undefined,
-      });
-    } else {
-      onOptimize({ mode: "coverage" });
-    }
+    onOptimize({
+      maxBudget:
+        useBudgetLimit && budgetLimit ? Number(budgetLimit) : undefined,
+      maxAntennas:
+        useMaxAntennas && maxAntennas ? Number(maxAntennas) : undefined,
+    });
   };
 
   const algorithmOptions = [
     {
       value: "greedy",
       label: "Greedy (Fast)",
-      description: isCoverageMode
-        ? "Cost-optimized placement"
-        : "Coverage-optimized placement",
+      description: "Score-based placement (Coverage + Capacity - Waste) / Cost",
     },
     {
       value: "genetic",
@@ -105,45 +86,6 @@ export function CalculationPanel({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        {/* Target Coverage */}
-        <div className="space-y-2">
-          <label className="text-sm text-slate-400 font-medium">
-            Target User Coverage
-          </label>
-          <div className="space-y-2">
-            <input
-              type="range"
-              min="50"
-              max="100"
-              step="5"
-              value={targetCoverage}
-              onChange={(e) => setTargetCoverage(Number(e.target.value))}
-              disabled={isBudgetMode}
-              className={cn(
-                "w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500",
-                isBudgetMode && "opacity-40 cursor-not-allowed"
-              )}
-            />
-            <div className="flex justify-between text-xs text-slate-500">
-              <span>50%</span>
-              <span
-                className={cn(
-                  "font-bold text-sm",
-                  isCoverageMode ? "text-emerald-400" : "text-slate-600"
-                )}
-              >
-                {targetCoverage}%
-              </span>
-              <span>100%</span>
-            </div>
-            {isBudgetMode && (
-              <div className="text-xs text-amber-400">
-                🔒 Disabled in budget mode
-              </div>
-            )}
-          </div>
-        </div>
-
         {/* Constraints */}
         <div className="space-y-2">
           <label className="text-sm text-slate-400 font-medium">
@@ -219,14 +161,14 @@ export function CalculationPanel({
                 />
               </div>
             )}
-            {isBudgetMode && (
+            {(useBudgetLimit || useMaxAntennas) && (
               <div className="text-xs text-emerald-400 mt-1">
-                ✓ Budget mode: Max coverage
+                ✓ Optimization: Max coverage with constraints
               </div>
             )}
-            {isCoverageMode && (
+            {!useBudgetLimit && !useMaxAntennas && (
               <div className="text-xs text-purple-400 mt-1">
-                ✓ Coverage mode: Min cost
+                ⚠️ No constraints: May place many antennas
               </div>
             )}
           </div>
@@ -317,12 +259,10 @@ export function CalculationPanel({
             )}
           </button>
           <div className="text-xs mt-2 space-y-1">
-            {isCoverageMode && (
-              <div className="text-purple-400">
-                📊 Target: {targetCoverage}% coverage (cheapest)
-              </div>
+            {!useBudgetLimit && !useMaxAntennas && (
+              <div className="text-purple-400">🎯 Goal: Cover all users</div>
             )}
-            {isBudgetMode && (
+            {(useBudgetLimit || useMaxAntennas) && (
               <div className="text-emerald-400">
                 🎯 Goal: Maximum coverage
                 {useBudgetLimit && budgetLimit && (

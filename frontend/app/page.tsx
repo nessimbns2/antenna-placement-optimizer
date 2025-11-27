@@ -27,7 +27,6 @@ export default function Home() {
   const [manualAntennas, setManualAntennas] = useState<
     Map<string, AntennaType>
   >(new Map());
-  const [targetCoverage, setTargetCoverage] = useState(95);
   const [editMode, setEditMode] = useState<"house" | "antenna">("house");
   const [selectedAntennaType, setSelectedAntennaType] =
     useState<AntennaType>("Pico");
@@ -701,7 +700,6 @@ export default function Home() {
   };
 
   const runOptimization = async (params: {
-    mode: "coverage" | "budget";
     maxBudget?: number;
     maxAntennas?: number;
   }) => {
@@ -738,8 +736,6 @@ export default function Home() {
         body: JSON.stringify({
           width: cols,
           height: rows,
-          optimization_mode: params.mode,
-          target_coverage: targetCoverage,
           max_budget: params.maxBudget,
           max_antennas: params.maxAntennas,
           obstacles: obstacles,
@@ -811,8 +807,6 @@ export default function Home() {
         />
 
         <CalculationPanel
-          targetCoverage={targetCoverage}
-          setTargetCoverage={setTargetCoverage}
           algorithm={algorithm}
           setAlgorithm={setAlgorithm}
           antennaSpecs={antennaSpecs}

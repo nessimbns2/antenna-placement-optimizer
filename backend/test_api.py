@@ -26,10 +26,18 @@ def test_antenna_types():
     print(f"   - Users per house: {data['users_per_house']}\n")
 
 
-def test_optimization(target_coverage=95, grid_size=20):
-    """Test optimization endpoint with different target coverage levels"""
+def test_optimization(max_budget=None, max_antennas=None, grid_size=20):
+    """Test optimization endpoint with different constraints"""
+    constraint_desc = []
+    if max_budget:
+        constraint_desc.append(f"budget=${max_budget:,}")
+    if max_antennas:
+        constraint_desc.append(f"max_antennas={max_antennas}")
+    if not constraint_desc:
+        constraint_desc.append("no constraints")
+
     print(
-        f"🔍 Testing optimization with {target_coverage}% target coverage on {grid_size}x{grid_size} grid...")
+        f"🔍 Testing optimization with {', '.join(constraint_desc)} on {grid_size}x{grid_size} grid...")
 
     # Create a test scenario with multiple houses
     # Generate houses in a pattern
@@ -41,7 +49,8 @@ def test_optimization(target_coverage=95, grid_size=20):
     data = {
         "width": grid_size,
         "height": grid_size,
-        "target_coverage": target_coverage,
+        "max_budget": max_budget,
+        "max_antennas": max_antennas,
         "obstacles": obstacles,  # Multiple houses
         "algorithm": "greedy"
     }
@@ -57,7 +66,7 @@ def test_optimization(target_coverage=95, grid_size=20):
 
     result = response.json()
 
-    print(f"✅ Optimization Results (Target: {target_coverage}%):")
+    print(f"✅ Optimization Results ({', '.join(constraint_desc)}):")
     print(f"   Antennas placed: {len(result['antennas'])}")
     antenna_types = {}
     for antenna in result['antennas']:
@@ -88,10 +97,11 @@ def main():
         test_health()
         test_antenna_types()
 
-        # Test with different target coverage levels
-        test_optimization(target_coverage=80, grid_size=20)
-        test_optimization(target_coverage=95, grid_size=20)
-        test_optimization(target_coverage=100, grid_size=15)
+        # Test with different constraint scenarios
+        test_optimization(max_budget=50000, grid_size=20)
+        test_optimization(max_antennas=10, grid_size=20)
+        test_optimization(max_budget=100000, max_antennas=15, grid_size=15)
+        test_optimization(grid_size=15)  # No constraints
 
         print("=" * 60)
         print("✅ All tests completed successfully!")

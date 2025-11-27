@@ -31,10 +31,8 @@ export interface AntennaPlacement {
 export interface OptimizationRequest {
     width: number;
     height: number;
-    optimization_mode: 'coverage' | 'budget';  // Optimization mode
-    target_coverage: number;  // Target user coverage percentage (0-100) - used in coverage mode
-    max_budget?: number;  // Maximum budget constraint - used in budget mode
-    max_antennas?: number;  // Maximum number of antennas - used in budget mode
+    max_budget?: number;  // Maximum budget constraint (optional)
+    max_antennas?: number;  // Maximum number of antennas (optional)
     obstacles: [number, number][];  // Houses (x, y coordinates)
     algorithm: string;
     allowed_antenna_types: AntennaType[];
