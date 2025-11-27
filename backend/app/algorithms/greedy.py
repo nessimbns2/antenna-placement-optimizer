@@ -8,16 +8,17 @@ USERS_PER_HOUSE = 20  # Each house contains 20 users
 
 
 class GreedyAlgorithm:
-    """Greedy algorithm for cost-optimized antenna placement with user coverage target."""
+    """Greedy algorithm for antenna placement using score-based optimization."""
 
     def __init__(
         self,
         width: int,
         height: int,
-        target_coverage: float,
         antenna_specs: Dict[AntennaType, AntennaSpec],
         houses: List[Tuple[int, int]],
-        allowed_antenna_types: List[AntennaType] | None = None
+        allowed_antenna_types: List[AntennaType] | None = None,
+        max_budget: int | None = None,
+        max_antennas: int | None = None
     ):
         """
         Initialize the greedy algorithm.
@@ -25,20 +26,24 @@ class GreedyAlgorithm:
         Args:
             width: Grid width
             height: Grid height
-            target_coverage: Target user coverage percentage (0-100)
             antenna_specs: Dictionary of antenna specifications
             houses: List of house coordinates (each has 20 users)
             allowed_antenna_types: List of allowed antenna types (None = all types allowed)
+            max_budget: Maximum budget constraint (None = no limit)
+            max_antennas: Maximum number of antennas constraint (None = no limit)
         """
         self.width = width
         self.height = height
-        self.target_coverage = target_coverage
+        self.max_budget = max_budget
+        self.max_antennas = max_antennas
+
         # Filter antenna specs by allowed types
         if allowed_antenna_types:
             self.antenna_specs = {
                 k: v for k, v in antenna_specs.items() if k in allowed_antenna_types}
         else:
             self.antenna_specs = antenna_specs
+
         self.houses = set(houses)  # Houses where antennas cannot be placed
         self.covered_cells: Set[Tuple[int, int]] = set()
         self.covered_houses: Set[Tuple[int, int]] = set()
@@ -46,7 +51,7 @@ class GreedyAlgorithm:
 
         logger.info(
             f"Initialized GreedyAlgorithm: {width}x{height} grid, "
-            f"target_coverage={target_coverage}%, {len(houses)} houses"
+            f"max_budget={max_budget}, max_antennas={max_antennas}, {len(houses)} houses"
         )
 
     def get_coverage_area(self, x: int, y: int, radius: int) -> Tuple[Set[Tuple[int, int]], Set[Tuple[int, int]]]:
@@ -115,21 +120,53 @@ class GreedyAlgorithm:
                 0 <= y < self.height and
                 (x, y) not in self.houses)
 
-    def find_best_antenna_placement(self, need_capacity_only: bool = False) -> Tuple[Tuple[int, int], AntennaType, float] | None:
+    def calculate_score(self, new_users: int, antenna_capacity: int, cost: int, users_covered: int) -> float:
         """
-        Find the best antenna placement considering cost efficiency.
+        Calculate the score for an antenna placement.
+        Score = (Coverage_Value + Capacity_Value - Waste_Value) / Cost
 
         Args:
-            need_capacity_only: If True, place antennas even if they don't cover new users
-                              (used when coverage is met but capacity is insufficient)
+            new_users: Number of new users that will be covered
+            antenna_capacity: Maximum capacity of the antenna
+            cost: Cost of the antenna
+            users_covered: Current total users covered (before placing this antenna)
 
         Returns:
-            Tuple of (position, antenna_type, cost_per_user) or None if no valid placement
+            Score value (higher is better)
+        """
+        if cost == 0:
+            return 0
+
+        # Coverage Value: New users covered
+        coverage_value = new_users
+
+        # Capacity Value: Additional capacity provided
+        capacity_value = antenna_capacity
+
+        # Waste Value: Capacity that exceeds covered users after placement
+        total_capacity_after = sum(
+            ant["max_users"] for ant in self.placed_antennas) + antenna_capacity
+        total_users_after = users_covered + new_users
+        waste_value = max(0, total_capacity_after - total_users_after)
+
+        # Calculate final score
+        score = (coverage_value + capacity_value - waste_value) / cost
+
+        return score
+
+    def find_best_antenna_placement(self) -> Tuple[Tuple[int, int], AntennaType, float] | None:
+        """
+        Find the best antenna placement using the score system.
+        Score = (Coverage_Value + Capacity_Value - Waste_Value) / Cost
+
+        Returns:
+            Tuple of (position, antenna_type, score) or None if no valid placement
         """
         best_position = None
         best_antenna_type = None
-        # Lower is better (cost per new user)
-        best_cost_efficiency = float('inf')
+        best_score = float('-inf')  # Higher is better
+
+        users_covered = len(self.covered_houses) * USERS_PER_HOUSE
 
         # Try all antenna types
         for antenna_type, spec in self.antenna_specs.items():
@@ -143,82 +180,100 @@ class GreedyAlgorithm:
                     if any(ant['x'] == x and ant['y'] == y for ant in self.placed_antennas):
                         continue
 
-                    _, new_users = self.count_new_coverage(
-                        x, y, spec.radius)
+                    # Calculate new coverage
+                    _, new_users = self.count_new_coverage(x, y, spec.radius)
 
-                    # If we need capacity only, allow placing anywhere valid
-                    # Otherwise, only consider positions that cover new users
-                    if need_capacity_only or new_users > 0:
-                        # Cost efficiency: cost per new user covered (or just cost if capacity-only mode)
-                        if new_users > 0:
-                            cost_efficiency = spec.cost / new_users
-                        else:
-                            # In capacity-only mode, prefer high-capacity antennas
-                            cost_efficiency = spec.cost / spec.max_users
+                    # Calculate score for this placement
+                    score = self.calculate_score(
+                        new_users=new_users,
+                        antenna_capacity=spec.max_users,
+                        cost=spec.cost,
+                        users_covered=users_covered
+                    )
 
-                        # Prefer lower cost per user (better efficiency)
-                        if cost_efficiency < best_cost_efficiency:
-                            best_cost_efficiency = cost_efficiency
-                            best_position = (x, y)
-                            best_antenna_type = antenna_type
+                    # Greedy principle: Select the placement with highest score
+                    if score > best_score:
+                        best_score = score
+                        best_position = (x, y)
+                        best_antenna_type = antenna_type
 
         if best_position is None:
             return None
 
-        return best_position, best_antenna_type, best_cost_efficiency
+        return best_position, best_antenna_type, best_score
 
     def optimize(self) -> Dict:
         """
-        Run the greedy algorithm to minimize cost while achieving target coverage.
-
-        Strategy: Iteratively place the most cost-efficient antenna (cost per new user covered)
-        until target coverage is reached.
+        Run the greedy algorithm using score-based optimization.
+        At each step, place the antenna with the highest score until constraints are met.
 
         Returns:
             Dictionary with optimization results including antenna positions, coverage, and costs
         """
-        logger.info("Starting cost-optimized greedy algorithm")
+        # Pretty header
+        print("\n" + "="*70)
+        print(f"🚀 SCORE-BASED GREEDY OPTIMIZATION")
+        print("="*70)
+        print(
+            f"🏘️  Houses: {len(self.houses)} (Total users: {len(self.houses) * USERS_PER_HOUSE})")
+        print(f"🗺️  Grid: {self.width}x{self.height}")
+        print(f"📐 Score Formula: (Coverage + Capacity - Waste) / Cost")
+
+        if self.max_budget:
+            print(f"💵 Budget Limit: ${self.max_budget:,}")
+        if self.max_antennas:
+            print(f"📡 Antenna Limit: {self.max_antennas}")
+        if not self.max_budget and not self.max_antennas:
+            print(f"⚠️  No constraints set")
+
+        print("="*70 + "\n")
+
+        logger.info(f"Starting score-based greedy algorithm")
 
         total_users = len(self.houses) * USERS_PER_HOUSE
-        target_users = (self.target_coverage / 100) * total_users
-
         iteration = 0
         max_iterations = self.width * self.height  # Prevent infinite loop
 
         while iteration < max_iterations:
             iteration += 1
 
-            # Check if we've reached target coverage
-            users_covered = len(self.covered_houses) * USERS_PER_HOUSE
-            total_capacity = sum(ant["max_users"]
-                                 for ant in self.placed_antennas)
+            # Check current state
+            total_cost = sum(ant["cost"] for ant in self.placed_antennas)
+            num_antennas = len(self.placed_antennas)
 
-            # Stop when both conditions are met:
-            # 1. Target coverage reached
-            # 2. We have enough capacity
-            coverage_met = users_covered >= target_users
-            capacity_sufficient = total_capacity >= users_covered
-
-            if coverage_met and capacity_sufficient:
-                # Both coverage and capacity goals met
+            # Check constraints
+            if self.max_antennas and num_antennas >= self.max_antennas:
+                print(f"\n📡 Antenna limit reached: {num_antennas}")
                 break
 
-            # Find best antenna placement
-            # If coverage is met but capacity is insufficient, allow placing anywhere
-            need_capacity_only = coverage_met and not capacity_sufficient
-            result = self.find_best_antenna_placement(
-                need_capacity_only=need_capacity_only)
+            if self.max_budget and total_cost >= self.max_budget:
+                print(f"\n💰 Budget limit reached: ${total_cost:,}")
+                break
+
+            # Find best antenna placement using score
+            result = self.find_best_antenna_placement()
 
             if result is None:
+                users_covered = len(self.covered_houses) * USERS_PER_HOUSE
+                total_capacity = sum(ant["max_users"]
+                                     for ant in self.placed_antennas)
                 logger.warning(
                     f"Could not find valid position for new antenna. "
-                    f"Placed {len(self.placed_antennas)} antennas. "
+                    f"Placed {num_antennas} antennas. "
                     f"Achieved {users_covered}/{total_users} users, capacity: {total_capacity}"
                 )
+                print(f"\n⚠️  No more valid placements available")
                 break
 
-            position, antenna_type, cost_efficiency = result
+            position, antenna_type, score = result
             spec = self.antenna_specs[antenna_type]
+
+            # Check if we can afford this antenna
+            if self.max_budget and (total_cost + spec.cost) > self.max_budget:
+                logger.info(
+                    f"Budget limit reached: ${total_cost} (next antenna would cost ${spec.cost})")
+                print(f"\n💰 Budget limit reached: ${total_cost:,}")
+                break
 
             # Place antenna
             antenna_data = {
@@ -241,11 +296,27 @@ class GreedyAlgorithm:
             users_covered = len(self.covered_houses) * USERS_PER_HOUSE
             current_coverage = (users_covered / total_users *
                                 100) if total_users > 0 else 0
+            new_cost = total_cost + spec.cost
+
+            # Calculate current capacity utilization
+            current_capacity = sum(ant["max_users"]
+                                   for ant in self.placed_antennas)
+            current_capacity_pct = (
+                users_covered / current_capacity * 100) if current_capacity > 0 else 0
+
+            # Pretty progress print every antenna
+            antenna_emoji = {"Femto": "📱", "Pico": "📡",
+                             "Micro": "🗼", "Macro": "🏗️"}
+            emoji = antenna_emoji.get(antenna_type.value, "📡")
+
+            print(f"{emoji} Antenna #{len(self.placed_antennas):2d}: {antenna_type.value:6s} @ ({position[0]:3d},{position[1]:3d}) "
+                  f"| Score: {score:7.2f} | Cost: ${spec.cost:>6,} | Coverage: {current_coverage:5.1f}% "
+                  f"| Capacity: {current_capacity_pct:5.1f}% | Total: ${new_cost:>8,}")
 
             logger.debug(
                 f"Placed {antenna_type.value} antenna #{len(self.placed_antennas)} at {position}, "
-                f"cost: ${spec.cost}, new users: {len(new_houses) * USERS_PER_HOUSE}, "
-                f"total coverage: {current_coverage:.1f}%, capacity: {total_capacity}"
+                f"score: {score:.2f}, cost: ${spec.cost}, new users: {len(new_houses) * USERS_PER_HOUSE}, "
+                f"total coverage: {current_coverage:.1f}%"
             )
 
         # Calculate final statistics
@@ -260,11 +331,28 @@ class GreedyAlgorithm:
         total_capacity = sum(ant["max_users"] for ant in self.placed_antennas)
         capacity_utilization = (
             users_covered / total_capacity * 100) if total_capacity > 0 else 0
+        wasted_capacity = max(0, total_capacity - users_covered)
 
         total_cost = sum(ant["cost"] for ant in self.placed_antennas)
 
+        # Pretty summary
+        print("\n" + "="*70)
+        print("✨ OPTIMIZATION COMPLETE")
+        print("="*70)
+        print(f"📡 Antennas Placed: {len(self.placed_antennas)}")
+        print(f"💰 Total Cost: ${total_cost:,}")
+        print(
+            f"👥 Users Covered: {users_covered}/{total_users} ({user_coverage_percentage:.2f}%)")
+        print(f"📊 Area Coverage: {coverage_percentage:.2f}%")
+        print(
+            f"🔋 Capacity: {total_capacity:,} users ({capacity_utilization:.1f}% utilized)")
+        print(
+            f"⚠️  Wasted Capacity: {wasted_capacity:,} users ({100 - capacity_utilization:.1f}%)")
+        print("="*70 + "\n")
+
         logger.info(
-            f"Cost-optimized greedy complete: {len(self.placed_antennas)} antennas placed, "
+            f"Score-based greedy algorithm complete: "
+            f"{len(self.placed_antennas)} antennas placed, "
             f"total cost: ${total_cost}, "
             f"{coverage_percentage:.2f}% area coverage, "
             f"{users_covered}/{total_users} users covered ({user_coverage_percentage:.2f}%)"
@@ -278,5 +366,6 @@ class GreedyAlgorithm:
             "user_coverage_percentage": user_coverage_percentage,
             "total_capacity": total_capacity,
             "capacity_utilization": capacity_utilization,
+            "wasted_capacity": wasted_capacity,
             "total_cost": total_cost
         }

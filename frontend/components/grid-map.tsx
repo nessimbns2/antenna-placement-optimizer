@@ -22,6 +22,8 @@ interface GridMapProps {
     max_users: number;
     cost: number;
   }[];
+  isFullscreen?: boolean;
+  onExitFullscreen?: () => void;
 }
 
 export function GridMap({
@@ -34,6 +36,8 @@ export function GridMap({
   selectedAntennaType = "Pico",
   manualAntennas = new Map(),
   antennaSpecs = [],
+  isFullscreen = false,
+  onExitFullscreen,
 }: GridMapProps) {
   // Adaptive cell size based on grid dimensions
   const cellSize = useMemo(() => {
@@ -132,27 +136,31 @@ export function GridMap({
   }, [antennaData, manualAntennas, antennaSpecs]);
 
   return (
-    <div className="relative glass-panel rounded-xl p-4">
-      <div
-        className="relative overflow-auto max-h-[800px]"
-        style={{
-          width: Math.min(cols * cellSize, 1600),
-          height: Math.min(rows * cellSize, 800),
-        }}
-      >
+    <div className="relative glass-panel rounded-xl p-4 overflow-hidden">
+      <div className="relative overflow-auto max-h-[800px]">
         <div
           className="relative"
           style={{
-            width: cols * cellSize,
-            height: rows * cellSize,
+            width: isLargeGrid
+              ? cols * cellSize + cols
+              : cols * cellSize + (cols - 1) * 4,
+            height: isLargeGrid
+              ? rows * cellSize + rows
+              : rows * cellSize + (rows - 1) * 4,
           }}
         >
           {/* SVG Overlay for coverage circles */}
           <svg
-            className="absolute inset-0 pointer-events-none"
+            className="absolute pointer-events-none"
             style={{
-              width: cols * cellSize,
-              height: rows * cellSize,
+              width: isLargeGrid
+                ? cols * cellSize + cols
+                : cols * cellSize + (cols - 1) * 4,
+              height: isLargeGrid
+                ? rows * cellSize + rows
+                : rows * cellSize + (rows - 1) * 4,
+              left: 0,
+              top: 0,
             }}
           >
             <defs>
@@ -171,9 +179,9 @@ export function GridMap({
               const gap = isLargeGrid ? 1 : 4;
               const centerX = antenna.x * (cellSize + gap) + cellSize / 2;
               const centerY = antenna.y * (cellSize + gap) + cellSize / 2;
-              // Backend returns radius in cells already, add 0.5 to cover full squares
+              // Backend returns radius in cells, multiply by cellSize + gap for visual radius
               const radiusInCells = antenna.radius;
-              const radius = (radiusInCells + 0.5) * cellSize;
+              const radius = radiusInCells * (cellSize + gap);
 
               return (
                 <circle

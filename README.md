@@ -25,18 +25,25 @@ antenna-placement-optimizer/
 ## ✨ Features
 
 ### Frontend
-- **Interactive Grid Map**: Visualize antenna placement and coverage areas
+- **Interactive Grid Map**: Visualize antenna placement and coverage areas with canvas rendering
+- **Grid Seeding**: Auto-generate house patterns (Random, Cluster, Linear, Edge, Diagonal)
+- **Dual Edit Modes**: Place houses or manually position antennas
 - **Multiple Algorithms**: Choose from Greedy, Genetic, Simulated Annealing, and Brute Force
-- **Real-time Stats**: Track coverage percentage, antenna count, and capacity utilization
+- **Real-time Stats**: Track coverage percentage, antenna count, cost, and capacity utilization
+- **Constraint Controls**: Set budget limits and maximum antenna counts
+- **Antenna Type Selection**: Choose which antenna types to allow in optimization
 - **Premium UI**: Dark mode glassmorphism design with smooth animations
 - **Responsive Design**: Works on desktop and mobile devices
 
 ### Backend
-- **RESTful API**: Clean, well-documented FastAPI endpoints
-- **Greedy Algorithm**: Fast, efficient antenna placement optimization
+- **RESTful API**: Clean, well-documented FastAPI endpoints with Swagger/ReDoc
+- **Greedy Algorithm**: Fast, efficient antenna placement optimization with capacity constraints
 - **Flexible Configuration**: Support for different antenna types (Femto, Pico, Micro, Macro)
-- **User Coverage Tracking**: Optimize for both area and user coverage
-- **Production Ready**: Comprehensive error handling and logging
+- **User Coverage Tracking**: Optimize for both area and user coverage (20 users per house)
+- **Budget Constraints**: Support for maximum budget and antenna count limits
+- **CORS Enabled**: Ready for cross-origin requests from frontend
+- **Production Ready**: Comprehensive error handling, logging, and validation
+- **Type Safety**: Full Pydantic model validation for all requests/responses
 
 ## 🛠️ Quick Start
 
@@ -90,14 +97,46 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 🎯 How It Works
 
-1. **Define the Problem**: Set grid dimensions and place houses (demand points)
-2. **Choose Algorithm**: Select from multiple optimization strategies
-3. **Optimize**: The backend calculates optimal antenna placements
-4. **Visualize**: See coverage areas and performance metrics in real-time
+1. **Set Grid Size**: Configure grid dimensions (max 1000x1000)
+2. **Place Houses**: 
+   - Manually click cells to place houses
+   - Use Grid Seeding to auto-generate patterns:
+     - **Random**: Random distribution across grid
+     - **Cluster**: Concentrated groups in specific areas
+     - **Linear**: Straight line patterns
+     - **Edge**: Houses around grid perimeter
+     - **Diagonal**: Diagonal line patterns
+3. **Configure Optimization**:
+   - Select allowed antenna types
+   - Set optional budget limit
+   - Set optional maximum antenna count
+   - Choose optimization algorithm
+4. **Run Optimization**: Backend calculates optimal placements considering:
+   - Coverage radius of each antenna type
+   - User capacity constraints (20 users per house)
+   - Cost efficiency
+   - Budget and antenna count limits
+5. **View Results**: 
+   - Antenna placements visualized on grid
+   - Coverage areas shown in real-time
+   - Statistics: total cost, coverage %, antenna count, computation time
+
+### Antenna Types
+
+The system supports four antenna types with different characteristics:
+
+| Type  | Coverage Radius | Max Users | Cost    | Use Case             |
+| ----- | --------------- | --------- | ------- | -------------------- |
+| Femto | 2 units         | 20        | $200    | Dense urban areas    |
+| Pico  | 10 units        | 100       | $800    | Indoor/Small outdoor |
+| Micro | 30 units        | 600       | $4,200  | Urban neighborhoods  |
+| Macro | 80 units        | 2,400     | $14,400 | Wide area coverage   |
+
+*Note: 1 grid unit = 50 meters in real-world distance. Each house contains 20 users.*
 
 ### Optimization Algorithms
 
-- **Greedy (Fast)**: Quick approximation prioritizing user coverage
+- **Greedy (Implemented)**: Quick approximation prioritizing user coverage and cost efficiency
 - **Genetic Algorithm**: Evolutionary optimization *(coming soon)*
 - **Simulated Annealing**: Temperature-based probabilistic search *(coming soon)*
 - **Brute Force**: Exhaustive search for small grids *(coming soon)*
@@ -106,28 +145,43 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Frontend
 - Next.js 16 (App Router)
-- TypeScript
+- React 19
+- TypeScript 5
 - Tailwind CSS v4
 - Lucide React Icons
+- clsx & tailwind-merge for styling
 
 ### Backend
-- FastAPI
+- FastAPI 0.104+
 - Python 3.9+
-- Pydantic
-- Poetry
+- Pydantic v2 (data validation)
+- NumPy (numerical computations)
+- Uvicorn (ASGI server)
+- Poetry (dependency management)
 
-## 📊 API Example
+## 📊 API Endpoints
+
+### GET /antenna-types
+Retrieve available antenna types and their specifications.
+
+```bash
+curl "http://localhost:8000/antenna-types"
+```
+
+### POST /optimize
+Optimize antenna placement based on constraints.
 
 ```bash
 curl -X POST "http://localhost:8000/optimize" \
   -H "Content-Type: application/json" \
   -d '{
-    "width": 10,
-    "height": 10,
-    "num_antennas": 3,
-    "antenna_type": "Pico",
+    "width": 20,
+    "height": 15,
     "obstacles": [[2, 3], [5, 5], [7, 8]],
-    "algorithm": "greedy"
+    "algorithm": "greedy",
+    "max_budget": 50000,
+    "max_antennas": 10,
+    "allowed_antenna_types": ["Pico", "Micro"]
   }'
 ```
 

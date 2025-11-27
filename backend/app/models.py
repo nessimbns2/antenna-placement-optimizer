@@ -5,10 +5,10 @@ from enum import Enum
 
 class AntennaType(str, Enum):
     """Antenna types with different specifications."""
-    FEMTO = "Femto"    # Radius: 1, Max users: 20, Cost: $1,000
-    PICO = "Pico"      # Radius: 6, Max users: 100, Cost: $5,000
-    MICRO = "Micro"    # Radius: 40, Max users: 500, Cost: $12,000
-    MACRO = "Macro"    # Radius: 100, Max users: 2000, Cost: $25,000
+    FEMTO = "Femto"    # Radius: 2, Max users: 20, Cost: $200
+    PICO = "Pico"      # Radius: 10, Max users: 100, Cost: $800
+    MICRO = "Micro"    # Radius: 30, Max users: 600, Cost: $4,200
+    MACRO = "Macro"    # Radius: 80, Max users: 2400, Cost: $14,400
 
 
 class AntennaSpec(BaseModel):
@@ -22,10 +22,10 @@ class AntennaSpec(BaseModel):
 # Predefined antenna specifications with costs
 # Based on grid system where 1 square = 50 meters
 ANTENNA_SPECS: Dict[AntennaType, AntennaSpec] = {
-    AntennaType.FEMTO: AntennaSpec(type=AntennaType.FEMTO, radius=1, max_users=20, cost=1000),
-    AntennaType.PICO: AntennaSpec(type=AntennaType.PICO, radius=6, max_users=100, cost=5000),
-    AntennaType.MICRO: AntennaSpec(type=AntennaType.MICRO, radius=40, max_users=500, cost=12000),
-    AntennaType.MACRO: AntennaSpec(type=AntennaType.MACRO, radius=100, max_users=2000, cost=25000),
+    AntennaType.FEMTO: AntennaSpec(type=AntennaType.FEMTO, radius=2, max_users=20, cost=200),
+    AntennaType.PICO: AntennaSpec(type=AntennaType.PICO, radius=10, max_users=100, cost=800),
+    AntennaType.MICRO: AntennaSpec(type=AntennaType.MICRO, radius=30, max_users=600, cost=4200),
+    AntennaType.MACRO: AntennaSpec(type=AntennaType.MACRO, radius=80, max_users=2400, cost=14400),
 }
 
 USERS_PER_HOUSE = 20  # Each house contains 20 users
@@ -36,15 +36,19 @@ class OptimizationRequest(BaseModel):
 
     width: int = Field(..., gt=0, description="Grid width")
     height: int = Field(..., gt=0, description="Grid height")
-    target_coverage: float = Field(
-        default=95.0,
-        ge=0,
-        le=100,
-        description="Target user coverage percentage (0-100). Algorithm will minimize cost while achieving this coverage."
+    max_budget: Optional[int] = Field(
+        default=None,
+        gt=0,
+        description="Maximum budget constraint in dollars (optional)"
+    )
+    max_antennas: Optional[int] = Field(
+        default=None,
+        gt=0,
+        description="Maximum number of antennas constraint (optional)"
     )
     obstacles: List[Tuple[int, int]] = Field(
         default_factory=list,
-        description="List of house coordinates (x, y) - each house has 10 users. Antennas cannot be placed on houses."
+        description="List of house coordinates (x, y) - each house has 20 users. Antennas cannot be placed on houses."
     )
     algorithm: str = Field(
         default="greedy",
@@ -127,6 +131,11 @@ class OptimizationResponse(BaseModel):
         ...,
         ge=0,
         description="Percentage of antenna capacity being used (can exceed 100% if demand exceeds capacity)"
+    )
+    wasted_capacity: int = Field(
+        ...,
+        ge=0,
+        description="Unused capacity (total_capacity - users_covered)"
     )
     total_cost: int = Field(
         ...,

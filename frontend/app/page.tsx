@@ -13,9 +13,9 @@ import {
   AntennaSpec,
 } from "@/lib/api-config";
 
-const DEFAULT_ROWS = 15;
+const DEFAULT_ROWS = 20;
 const DEFAULT_COLS = 20;
-const MAX_GRID_SIZE = 1000;
+const MAX_GRID_SIZE = 350;
 const COST_PER_ANTENNA = 5000;
 const USERS_PER_HOUSE = 20;
 
@@ -27,7 +27,6 @@ export default function Home() {
   const [manualAntennas, setManualAntennas] = useState<
     Map<string, AntennaType>
   >(new Map());
-  const [targetCoverage, setTargetCoverage] = useState(95);
   const [editMode, setEditMode] = useState<"house" | "antenna">("house");
   const [selectedAntennaType, setSelectedAntennaType] =
     useState<AntennaType>("Pico");
@@ -45,6 +44,9 @@ export default function Home() {
 
   // Derived state for coverage visualization
   const [coverage, setCoverage] = useState<boolean[][]>([]);
+  const [gridSize, setGridSize] = useState(DEFAULT_ROWS); // 1:1 ratio
+  const [forceCanvas, setForceCanvas] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Fetch antenna types on mount
   useEffect(() => {
@@ -72,6 +74,12 @@ export default function Home() {
     // Auto-generate when pattern changes from dropdown
     handleRandomize();
   }, [selectedPattern]);
+
+  // Sync rows and cols with gridSize (1:1 ratio)
+  useEffect(() => {
+    setRows(gridSize);
+    setCols(gridSize);
+  }, [gridSize]);
 
   // Initialize grid
   useEffect(() => {
@@ -700,7 +708,10 @@ export default function Home() {
     setOptimizationResult(null);
   };
 
-  const runOptimization = async () => {
+  const runOptimization = async (params: {
+    maxBudget?: number;
+    maxAntennas?: number;
+  }) => {
     setIsOptimizing(true);
 
     try {
@@ -734,7 +745,8 @@ export default function Home() {
         body: JSON.stringify({
           width: cols,
           height: rows,
-          target_coverage: targetCoverage,
+          max_budget: params.maxBudget,
+          max_antennas: params.maxAntennas,
           obstacles: obstacles,
           algorithm: algorithm,
           allowed_antenna_types: Array.from(allowedAntennaTypes),
@@ -804,8 +816,6 @@ export default function Home() {
         />
 
         <CalculationPanel
-          targetCoverage={targetCoverage}
-          setTargetCoverage={setTargetCoverage}
           algorithm={algorithm}
           setAlgorithm={setAlgorithm}
           antennaSpecs={antennaSpecs}
@@ -816,45 +826,88 @@ export default function Home() {
         />
 
         <GridSeedingPanel
-          rows={rows}
-          cols={cols}
-          setRows={setRows}
-          setCols={setCols}
+          gridSize={gridSize}
+          setGridSize={setGridSize}
           editMode={editMode}
           setEditMode={setEditMode}
           selectedAntennaType={selectedAntennaType}
           setSelectedAntennaType={setSelectedAntennaType}
           selectedPattern={selectedPattern}
           setSelectedPattern={setSelectedPattern}
-          onRandomize={handleRandomize}
           onClear={handleClear}
+          forceCanvas={forceCanvas}
+          setForceCanvas={setForceCanvas}
+          isFullscreen={isFullscreen}
+          setIsFullscreen={setIsFullscreen}
+          totalCells={rows * cols}
         />
 
-        <div className="w-full">
-          {rows * cols > 10000 ? (
-            <CanvasGrid
-              rows={rows}
-              cols={cols}
-              grid={grid}
-              onCellClick={handleCellClick}
-              coverage={coverage}
-              antennaData={optimizationResult?.antennas}
-              manualAntennas={manualAntennas}
-              antennaSpecs={antennaSpecs}
-            />
-          ) : (
-            <GridMap
-              rows={rows}
-              cols={cols}
-              grid={grid}
-              onCellClick={handleCellClick}
-              coverage={coverage}
-              antennaData={optimizationResult?.antennas}
-              selectedAntennaType={selectedAntennaType}
-              manualAntennas={manualAntennas}
-              antennaSpecs={antennaSpecs}
-            />
+        <div
+          className={
+            isFullscreen
+              ? "fixed inset-0 z-50 bg-slate-950 p-4 flex flex-col"
+              : "w-full"
+          }
+        >
+          {isFullscreen && (
+            <div className="flex justify-end mb-2">
+              <button
+                onClick={() => setIsFullscreen(false)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-all flex items-center gap-2 shadow-lg"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
+                Exit Fullscreen
+              </button>
+            </div>
           )}
+          <div
+            className={
+              isFullscreen ? "flex-1 flex items-center justify-center" : ""
+            }
+          >
+            {rows * cols > 10000 || forceCanvas ? (
+              <CanvasGrid
+                rows={rows}
+                cols={cols}
+                grid={grid}
+                onCellClick={handleCellClick}
+                coverage={coverage}
+                antennaData={optimizationResult?.antennas}
+                manualAntennas={manualAntennas}
+                antennaSpecs={antennaSpecs}
+                largePixels={rows * cols < 100}
+                isFullscreen={isFullscreen}
+                onExitFullscreen={() => setIsFullscreen(false)}
+              />
+            ) : (
+              <GridMap
+                rows={rows}
+                cols={cols}
+                grid={grid}
+                onCellClick={handleCellClick}
+                coverage={coverage}
+                antennaData={optimizationResult?.antennas}
+                selectedAntennaType={selectedAntennaType}
+                manualAntennas={manualAntennas}
+                antennaSpecs={antennaSpecs}
+                isFullscreen={isFullscreen}
+                onExitFullscreen={() => setIsFullscreen(false)}
+              />
+            )}
+          </div>
         </div>
       </div>
     </main>

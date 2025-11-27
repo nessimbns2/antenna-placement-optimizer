@@ -31,9 +31,11 @@ export interface AntennaPlacement {
 export interface OptimizationRequest {
     width: number;
     height: number;
-    target_coverage: number;  // Target user coverage percentage (0-100)
+    max_budget?: number;  // Maximum budget constraint (optional)
+    max_antennas?: number;  // Maximum number of antennas (optional)
     obstacles: [number, number][];  // Houses (x, y coordinates)
     algorithm: string;
+    allowed_antenna_types: AntennaType[];
 }
 
 export interface OptimizationResponse {
@@ -44,6 +46,7 @@ export interface OptimizationResponse {
     user_coverage_percentage: number;
     total_capacity: number;
     capacity_utilization: number;
+    wasted_capacity: number;
     total_cost: number;
     algorithm: string;
     execution_time_ms: number;

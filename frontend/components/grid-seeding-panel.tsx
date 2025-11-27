@@ -6,10 +6,8 @@ import { cn } from "@/lib/utils";
 import { AntennaType } from "@/lib/api-config";
 
 interface GridSeedingPanelProps {
-  rows: number;
-  cols: number;
-  setRows: (v: number) => void;
-  setCols: (v: number) => void;
+  gridSize: number;
+  setGridSize: (v: number) => void;
   editMode: "house" | "antenna";
   setEditMode: (m: "house" | "antenna") => void;
   selectedAntennaType: AntennaType;
@@ -17,13 +15,16 @@ interface GridSeedingPanelProps {
   selectedPattern: string;
   setSelectedPattern: (p: string) => void;
   onClear: () => void;
+  forceCanvas: boolean;
+  setForceCanvas: (v: boolean) => void;
+  isFullscreen: boolean;
+  setIsFullscreen: (v: boolean) => void;
+  totalCells: number;
 }
 
 export function GridSeedingPanel({
-  rows,
-  cols,
-  setRows,
-  setCols,
+  gridSize,
+  setGridSize,
   editMode,
   setEditMode,
   selectedAntennaType,
@@ -31,6 +32,11 @@ export function GridSeedingPanel({
   selectedPattern,
   setSelectedPattern,
   onClear,
+  forceCanvas,
+  setForceCanvas,
+  isFullscreen,
+  setIsFullscreen,
+  totalCells,
 }: GridSeedingPanelProps) {
   const patterns = [
     { value: "random", label: "🎲 Random Pattern" },
@@ -59,57 +65,77 @@ export function GridSeedingPanel({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        {/* Grid Size */}
+        {/* Grid Size - 1:1 Ratio */}
         <div className="space-y-2">
           <label className="text-sm text-slate-400 font-medium">
-            Grid Size
+            Grid Size (1:1)
           </label>
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <span className="text-xs text-slate-500 block mb-1">Rows</span>
+          <div className="space-y-2">
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs text-slate-500">Size</span>
+                <span className="text-sm text-emerald-400 font-bold">
+                  {gridSize}×{gridSize}
+                </span>
+              </div>
               <input
-                type="number"
-                value={rows}
-                onChange={(e) => {
-                  const val = Math.min(
-                    1000,
-                    Math.max(1, Number(e.target.value) || 1)
-                  );
-                  setRows(val);
-                }}
-                min="1"
-                max="1000"
-                className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                type="range"
+                min="10"
+                max="350"
+                step="10"
+                value={gridSize}
+                onChange={(e) => setGridSize(Number(e.target.value))}
+                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
               />
+              <div className="flex justify-between text-xs text-slate-500 mt-1">
+                <span>10×10</span>
+                <span>350×350</span>
+              </div>
             </div>
-            <div className="flex-1">
-              <span className="text-xs text-slate-500 block mb-1">Cols</span>
-              <input
-                type="number"
-                value={cols}
-                onChange={(e) => {
-                  const val = Math.min(
-                    1000,
-                    Math.max(1, Number(e.target.value) || 1)
-                  );
-                  setCols(val);
-                }}
-                min="1"
-                max="1000"
-                className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
-              />
-            </div>
+            <button
+              onClick={() => setGridSize(20)}
+              className="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-medium transition-all"
+            >
+              Reset to 20×20
+            </button>
           </div>
-          {rows * cols > 10000 && (
-            <div className="text-xs text-amber-400 mt-1">
-              ⚡ Large grid: Using Canvas rendering
+
+          {/* View Options */}
+          <div className="mt-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-slate-500">Force Canvas</span>
+              <button
+                onClick={() => setForceCanvas(!forceCanvas)}
+                className={cn(
+                  "px-2 py-1 rounded text-xs font-medium transition-all",
+                  forceCanvas
+                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/50"
+                    : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                )}
+              >
+                {forceCanvas ? "ON" : "OFF"}
+              </button>
             </div>
-          )}
-          {rows * cols > 100000 && (
-            <div className="text-xs text-orange-400 mt-1">
-              ⚠️ Very large grid may be slow
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-slate-500">Fullscreen</span>
+              <button
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                className={cn(
+                  "px-2 py-1 rounded text-xs font-medium transition-all",
+                  isFullscreen
+                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/50"
+                    : "bg-slate-800 text-slate-400 hover:bg-slate-700"
+                )}
+              >
+                {isFullscreen ? "ON" : "OFF"}
+              </button>
             </div>
-          )}
+            {totalCells < 100 && forceCanvas && (
+              <div className="text-xs text-emerald-400 mt-1">
+                ✓ Using large pixels for small grid
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Pattern Selection */}

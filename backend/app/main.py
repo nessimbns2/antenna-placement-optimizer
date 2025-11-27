@@ -109,7 +109,7 @@ async def optimize_antenna_placement(request: OptimizationRequest) -> Optimizati
     logger.info(
         f"Received optimization request: algorithm={request.algorithm}, "
         f"grid={request.width}x{request.height}, "
-        f"target_coverage={request.target_coverage}%"
+        f"max_budget={request.max_budget}, max_antennas={request.max_antennas}"
     )
 
     try:
@@ -126,10 +126,11 @@ async def optimize_antenna_placement(request: OptimizationRequest) -> Optimizati
             algorithm = GreedyAlgorithm(
                 width=request.width,
                 height=request.height,
-                target_coverage=request.target_coverage,
                 antenna_specs=ANTENNA_SPECS,
                 houses=request.obstacles,
-                allowed_antenna_types=request.allowed_antenna_types
+                allowed_antenna_types=request.allowed_antenna_types,
+                max_budget=request.max_budget,
+                max_antennas=request.max_antennas
             )
             result = algorithm.optimize()
         else:
@@ -163,6 +164,7 @@ async def optimize_antenna_placement(request: OptimizationRequest) -> Optimizati
                 result["user_coverage_percentage"], 2),
             total_capacity=result["total_capacity"],
             capacity_utilization=round(result["capacity_utilization"], 2),
+            wasted_capacity=result["wasted_capacity"],
             total_cost=result["total_cost"],
             algorithm=request.algorithm,
             execution_time_ms=round(execution_time_ms, 2)
