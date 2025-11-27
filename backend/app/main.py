@@ -14,6 +14,7 @@ from app.models import (
     ANTENNA_SPECS
 )
 from app.algorithms.greedy import GreedyAlgorithm
+from app.algorithms.genetic import GeneticAlgorithm
 from app.algorithms.simulated_annealing import SimulatedAnnealingAlgorithm
 
 # Configure logging
@@ -134,6 +135,21 @@ async def optimize_antenna_placement(request: OptimizationRequest) -> Optimizati
                 max_antennas=request.max_antennas
             )
             result = algorithm.optimize()
+        elif request.algorithm == "genetic":
+            algorithm = GeneticAlgorithm(
+                width=request.width,
+                height=request.height,
+                antenna_specs=ANTENNA_SPECS,
+                houses=request.obstacles,
+                allowed_antenna_types=request.allowed_antenna_types,
+                max_budget=request.max_budget,
+                max_antennas=request.max_antennas,
+                population_size=30,
+                generations=50,
+                mutation_rate=0.15,
+                crossover_rate=0.7
+            )
+            result = algorithm.optimize()
         elif request.algorithm == "simulated-annealing":
             algorithm = SimulatedAnnealingAlgorithm(
                 width=request.width,
@@ -149,7 +165,7 @@ async def optimize_antenna_placement(request: OptimizationRequest) -> Optimizati
             # Placeholder for other algorithms
             raise HTTPException(
                 status_code=status.HTTP_501_NOT_IMPLEMENTED,
-                detail=f"Algorithm '{request.algorithm}' is not yet implemented. Currently only 'greedy' is available."
+                detail=f"Algorithm '{request.algorithm}' is not yet implemented. Available: greedy, genetic, simulated-annealing."
             )
 
         execution_time_ms = (time.time() - start_time) * 1000
