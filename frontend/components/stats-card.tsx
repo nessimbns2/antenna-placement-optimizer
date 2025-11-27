@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Activity, Signal, DollarSign, Users, Zap, Clock } from "lucide-react";
+import { Activity, DollarSign, Users, Zap, Clock } from "lucide-react";
 import { OptimizationResponse } from "@/lib/api-config";
 
 interface StatsCardProps {
@@ -23,8 +23,6 @@ export function StatsCard({
   costPerAntenna,
   optimizationResult,
 }: StatsCardProps) {
-  const coveragePercent =
-    totalHouses > 0 ? Math.round((coveredHouses / totalHouses) * 100) : 0;
   const userCoveragePercent =
     totalUsers > 0 ? Math.round((coveredUsers / totalUsers) * 100) : 0;
   const totalCost = antennaCount * costPerAntenna;
@@ -32,21 +30,6 @@ export function StatsCard({
   return (
     <div className="space-y-4 w-full">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="glass-panel p-4 rounded-xl flex items-center gap-4">
-          <div className="p-3 rounded-lg bg-emerald-500/20 text-emerald-400">
-            <Signal size={24} />
-          </div>
-          <div>
-            <p className="text-sm text-slate-400">House Coverage</p>
-            <p className="text-2xl font-bold text-slate-100">
-              {coveragePercent}%
-              <span className="text-xs text-slate-500 ml-2 font-normal">
-                ({coveredHouses}/{totalHouses})
-              </span>
-            </p>
-          </div>
-        </div>
-
         <div className="glass-panel p-4 rounded-xl flex items-center gap-4">
           <div className="p-3 rounded-lg bg-cyan-500/20 text-cyan-400">
             <Users size={24} />
@@ -83,6 +66,25 @@ export function StatsCard({
               {optimizationResult
                 ? optimizationResult.total_cost.toLocaleString()
                 : totalCost.toLocaleString()}
+            </p>
+          </div>
+        </div>
+
+        <div className="glass-panel p-4 rounded-xl flex items-center gap-4">
+          <div className="p-3 rounded-lg bg-amber-500/20 text-amber-400">
+            <Zap size={24} />
+          </div>
+          <div>
+            <p className="text-sm text-slate-400">Wasted Capacity</p>
+            <p className="text-2xl font-bold text-slate-100">
+              {optimizationResult && optimizationResult.total_capacity > 0
+                ? `${((optimizationResult.wasted_capacity / optimizationResult.total_capacity) * 100).toFixed(1)}%`
+                : "0%"}
+              <span className="text-xs text-slate-500 ml-2 font-normal">
+                {optimizationResult
+                  ? `(${optimizationResult.wasted_capacity.toLocaleString()})`
+                  : "(0)"}
+              </span>
             </p>
           </div>
         </div>

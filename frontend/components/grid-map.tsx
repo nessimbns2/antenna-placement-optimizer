@@ -132,12 +132,11 @@ export function GridMap({
   }, [antennaData, manualAntennas, antennaSpecs]);
 
   return (
-    <div className="relative glass-panel rounded-xl p-4">
+    <div className="relative glass-panel rounded-xl p-4 overflow-hidden">
       <div
-        className="relative overflow-auto max-h-[800px]"
+        className="relative overflow-auto max-h-[800px] max-w-full"
         style={{
-          width: Math.min(cols * cellSize, 1600),
-          height: Math.min(rows * cellSize, 800),
+          maxWidth: "100%",
         }}
       >
         <div
@@ -145,6 +144,7 @@ export function GridMap({
           style={{
             width: cols * cellSize,
             height: rows * cellSize,
+            minWidth: "min-content",
           }}
         >
           {/* SVG Overlay for coverage circles */}
