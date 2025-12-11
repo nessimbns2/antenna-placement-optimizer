@@ -25,6 +25,7 @@ interface Scenario {
   pattern: string;
   maxBudget: number | null;
   maxAntennas: number | null;
+  allowedAntennaTypes: AntennaType[];
 }
 
 interface ScenarioResult {
@@ -73,6 +74,8 @@ export default function ComparePage() {
     obstacles: [number, number][];
     scenario: Scenario | null;
   } | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [importedResultsPreview, setImportedResultsPreview] = useState<object | null>(null);
 
   const toggleAntennaType = (type: AntennaType) => {
     const newSet = new Set(allowedAntennaTypes);
@@ -91,6 +94,7 @@ export default function ComparePage() {
       pattern: selectedPattern,
       maxBudget,
       maxAntennas,
+      allowedAntennaTypes: Array.from(allowedAntennaTypes),
     };
     setScenarios([...scenarios, newScenario]);
   };
@@ -124,12 +128,14 @@ export default function ComparePage() {
             pattern?: string;
             maxBudget?: number | null;
             maxAntennas?: number | null;
+            allowedAntennaTypes?: AntennaType[];
           }) => ({
             id: crypto.randomUUID(),
             gridSize: s.gridSize || 50,
             pattern: s.pattern || "random_scattered",
             maxBudget: s.maxBudget || null,
             maxAntennas: s.maxAntennas || null,
+            allowedAntennaTypes: s.allowedAntennaTypes || Array.from(allowedAntennaTypes),
           }));
           setScenarios([...scenarios, ...importedScenarios]);
           alert(`Imported ${importedScenarios.length} scenarios!`);
@@ -143,6 +149,57 @@ export default function ComparePage() {
     };
     reader.readAsText(file);
     e.target.value = ""; // Reset for re-import
+  };
+
+  // Import saved results
+  const resultsInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleImportResultsClick = () => {
+    resultsInputRef.current?.click();
+  };
+
+  const handleImportResults = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target?.result as string);
+
+        // Check if it has full scenario data for display
+        if (data.fullScenarios && Array.isArray(data.fullScenarios)) {
+          // Convert to ScenarioResult format
+          const imported: ScenarioResult[] = data.fullScenarios.map((fs: {
+            scenario: { id: string; gridSize: number; pattern: string; maxBudget: number | null; maxAntennas: number | null; allowedAntennaTypes?: AntennaType[] };
+            obstacles: [number, number][];
+            results: OptimizationResponse[];
+          }) => ({
+            scenario: {
+              id: fs.scenario.id || crypto.randomUUID(),
+              gridSize: fs.scenario.gridSize,
+              pattern: fs.scenario.pattern,
+              maxBudget: fs.scenario.maxBudget,
+              maxAntennas: fs.scenario.maxAntennas,
+              allowedAntennaTypes: fs.scenario.allowedAntennaTypes || ["Femto", "Pico", "Micro", "Macro"],
+            },
+            obstacles: fs.obstacles,
+            results: fs.results,
+          }));
+          setScenarioResults(imported);
+          alert(`Loaded ${imported.length} scenarios with full results!`);
+        } else {
+          // Just show preview for old format
+          setImportedResultsPreview(data);
+          alert(`Loaded results preview from ${file.name}`);
+        }
+      } catch (err) {
+        alert("Failed to parse results file.");
+        console.error(err);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
   };
 
   const runSingleComparison = async () => {
@@ -163,6 +220,7 @@ export default function ComparePage() {
           pattern: selectedPattern,
           maxBudget,
           maxAntennas,
+          allowedAntennaTypes: Array.from(allowedAntennaTypes),
         },
         obstacles
       );
@@ -176,6 +234,7 @@ export default function ComparePage() {
           pattern: selectedPattern,
           maxBudget,
           maxAntennas,
+          allowedAntennaTypes: Array.from(allowedAntennaTypes),
         },
       });
     } catch (error) {
@@ -236,7 +295,7 @@ export default function ComparePage() {
               height: scenario.gridSize,
               obstacles,
               algorithm: algo,
-              allowed_antenna_types: Array.from(allowedAntennaTypes),
+              allowed_antenna_types: scenario.allowedAntennaTypes,
               max_budget: scenario.maxBudget,
               max_antennas: scenario.maxAntennas,
             }),
@@ -256,56 +315,70 @@ export default function ComparePage() {
 
   const exportBatchResults = (results: ScenarioResult[]) => {
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+
+    // Export JSON with FULL data for re-import
+    const jsonData = {
+      generated: new Date().toISOString(),
+      antennaTypes: Array.from(allowedAntennaTypes),
+      // Full data for re-import and display
+      fullScenarios: results.map((sr) => ({
+        scenario: sr.scenario,
+        obstacles: sr.obstacles,
+        results: sr.results,
+      })),
+      // Summary for quick preview
+      summary: results.map((sr, idx) => ({
+        id: idx + 1,
+        gridSize: sr.scenario.gridSize,
+        pattern: sr.scenario.pattern,
+        maxBudget: sr.scenario.maxBudget,
+        maxAntennas: sr.scenario.maxAntennas,
+        houses: sr.obstacles.length,
+        results: sr.results.map((r) => ({
+          algorithm: r.algorithm,
+          coverage: r.coverage_percentage,
+          cost: r.total_cost,
+          antennas: r.antennas.length,
+          timeMs: r.execution_time_ms,
+        })),
+      })),
+    };
+    const jsonBlob = new Blob([JSON.stringify(jsonData, null, 2)], { type: "application/json" });
+    const jsonUrl = URL.createObjectURL(jsonBlob);
+    const jsonA = document.createElement("a");
+    jsonA.href = jsonUrl;
+    jsonA.download = `comparison_results_${timestamp}.json`;
+    jsonA.click();
+    URL.revokeObjectURL(jsonUrl);
+  };
+
+  // Compact research export (txt) - tight data without grid positions
+  const exportResearchData = (results: ScenarioResult[]) => {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const lines: string[] = [
-      "=".repeat(60),
-      "ALGORITHM COMPARISON REPORT",
-      "=".repeat(60),
-      `Generated: ${new Date().toLocaleString()}`,
-      `Antenna Types: ${Array.from(allowedAntennaTypes).join(", ")}`,
+      "ALGORITHM COMPARISON - RESEARCH DATA",
+      `Generated: ${new Date().toISOString()}`,
       "",
     ];
 
     results.forEach((sr, idx) => {
       const { scenario, results: algoResults, obstacles } = sr;
-      lines.push("=".repeat(60));
-      lines.push(`SCENARIO ${idx + 1}`);
-      lines.push("=".repeat(60));
-      lines.push(`Grid Size: ${scenario.gridSize}x${scenario.gridSize}`);
-      lines.push(`Pattern: ${scenario.pattern}`);
-      lines.push(`Houses: ${obstacles.length}`);
-      lines.push(
-        `Constraints: ${scenario.maxBudget
-          ? `Budget $${scenario.maxBudget.toLocaleString()}`
-          : ""
-        }${scenario.maxBudget && scenario.maxAntennas ? " | " : ""}${scenario.maxAntennas ? `Max ${scenario.maxAntennas} antennas` : ""
-        }${!scenario.maxBudget && !scenario.maxAntennas ? "None" : ""}`
-      );
+      lines.push(`=== SCENARIO ${idx + 1} ===`);
+      lines.push(`Grid: ${scenario.gridSize}x${scenario.gridSize} | Pattern: ${scenario.pattern} | Houses: ${obstacles.length}`);
+      lines.push(`Constraints: Budget=${scenario.maxBudget || "None"} | MaxAnt=${scenario.maxAntennas || "None"} | Types=${scenario.allowedAntennaTypes.join(",")}`);
       lines.push("");
-      lines.push("RESULTS:");
-      lines.push("-".repeat(60));
-      lines.push(
-        "Algorithm          | Coverage | Cost      | Antennas | Time    | $/Cov"
-      );
-      lines.push("-".repeat(60));
+      lines.push("Algorithm\tCoverage%\tCost\tAntennas\tTimeMs\t$/Coverage");
 
       algoResults.forEach((r) => {
-        const costPerCov =
-          r.coverage_percentage > 0
-            ? (r.total_cost / r.coverage_percentage).toFixed(0)
-            : "N/A";
-        lines.push(
-          `${(algorithmLabels[r.algorithm] || r.algorithm).padEnd(18)} | ${r.coverage_percentage.toFixed(1).padStart(7)}% | $${r.total_cost.toLocaleString().padStart(8)} | ${r.antennas.length.toString().padStart(8)} | ${r.execution_time_ms.toFixed(0).padStart(6)}ms | $${costPerCov.padStart(5)}`
-        );
+        const costPerCov = r.coverage_percentage > 0 ? (r.total_cost / r.coverage_percentage).toFixed(1) : "N/A";
+        lines.push(`${r.algorithm}\t${r.coverage_percentage.toFixed(2)}\t${r.total_cost}\t${r.antennas.length}\t${r.execution_time_ms.toFixed(1)}\t${costPerCov}`);
       });
 
       lines.push("");
-      lines.push("RANKINGS:");
+      lines.push("Rankings:");
       const rankings = calculateRankings(algoResults);
       rankings.forEach((r, i) => {
-        const badge = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`;
-        lines.push(
-          `${badge} ${(algorithmLabels[r.algorithm] || r.algorithm).padEnd(20)} (Score: ${r.overallScore.toFixed(2)})`
-        );
+        lines.push(`${i + 1}. ${r.algorithm} (Score: ${r.overallScore.toFixed(2)})`);
       });
       lines.push("");
     });
@@ -314,7 +387,7 @@ export default function ComparePage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `comparison_results_${timestamp}.txt`;
+    a.download = `research_data_${timestamp}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -477,8 +550,47 @@ export default function ComparePage() {
             >
               📂 Import Scenarios
             </button>
+            <input
+              ref={resultsInputRef}
+              type="file"
+              accept=".json"
+              onChange={handleImportResults}
+              className="hidden"
+            />
+            <button
+              onClick={handleImportResultsClick}
+              className="flex items-center gap-2 px-6 py-3 rounded-lg font-semibold bg-green-600 hover:bg-green-500 text-white"
+            >
+              📊 Load Results
+            </button>
           </div>
         </div>
+
+        {/* Imported Results Preview (for old format files) */}
+        {importedResultsPreview && (
+          <div className="bg-neutral-900 border border-green-800 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2 text-green-400">
+                <BarChart3 className="w-5 h-5" />
+                <h3 className="text-lg font-semibold">📊 Loaded Results Preview (Legacy Format)</h3>
+              </div>
+              <button
+                onClick={() => setImportedResultsPreview(null)}
+                className="text-sm text-red-400 hover:text-red-300"
+              >
+                Close
+              </button>
+            </div>
+            <div className="bg-neutral-800 rounded-lg p-4 max-h-96 overflow-auto">
+              <pre className="text-xs text-neutral-300 whitespace-pre-wrap">
+                {JSON.stringify(importedResultsPreview, null, 2)}
+              </pre>
+            </div>
+            <p className="text-xs text-neutral-500 mt-2">
+              Note: This file was exported in an older format. Re-run the batch test to get full visual results.
+            </p>
+          </div>
+        )}
 
         {/* Scenario Queue */}
         {scenarios.length > 0 && (
@@ -496,25 +608,30 @@ export default function ComparePage() {
             </div>
 
             <div className="space-y-2 mb-4">
-              {scenarios.map((s, idx) => (
-                <div
-                  key={s.id}
-                  className="flex items-center justify-between bg-neutral-800 rounded-lg px-4 py-2"
-                >
-                  <span className="text-sm text-neutral-300">
-                    {idx + 1}. {s.gridSize}×{s.gridSize} |{" "}
-                    {PATTERNS.find((p) => p.name === s.pattern)?.label || s.pattern}
-                    {s.maxBudget && ` | $${s.maxBudget.toLocaleString()}`}
-                    {s.maxAntennas && ` | Max ${s.maxAntennas}`}
-                  </span>
-                  <button
-                    onClick={() => removeScenario(s.id)}
-                    className="text-neutral-500 hover:text-red-400"
+              {scenarios.map((s, idx) => {
+                const constraintParts: string[] = [];
+                if (s.maxBudget) constraintParts.push(`💰$${s.maxBudget.toLocaleString()}`);
+                if (s.maxAntennas) constraintParts.push(`📡Max ${s.maxAntennas}`);
+                const antTypes = s.allowedAntennaTypes.join("/");
+                constraintParts.push(`🔧${antTypes}`);
+
+                return (
+                  <div
+                    key={s.id}
+                    className="flex items-center justify-between bg-neutral-800 rounded-lg px-4 py-2"
                   >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
+                    <span className="text-sm text-neutral-300">
+                      {idx + 1}. {s.gridSize}×{s.gridSize} - {PATTERNS.find((p) => p.name === s.pattern)?.label || s.pattern} | {constraintParts.join(" ")}
+                    </span>
+                    <button
+                      onClick={() => removeScenario(s.id)}
+                      className="text-neutral-500 hover:text-red-400"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
 
             <button
@@ -561,24 +678,80 @@ export default function ComparePage() {
         {/* Batch Results */}
         {scenarioResults.length > 0 && (
           <div className="space-y-8">
-            <div className="flex items-center gap-2 text-neutral-400">
-              <BarChart3 className="w-5 h-5" />
-              <h2 className="text-lg font-semibold">
-                Batch Results ({scenarioResults.length} scenarios)
-              </h2>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-neutral-400">
+                <BarChart3 className="w-5 h-5" />
+                <h2 className="text-lg font-semibold">
+                  Batch Results ({scenarioResults.length} scenarios)
+                </h2>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowPreview(!showPreview)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-sm text-white"
+                >
+                  {showPreview ? "Hide Preview" : "📊 Preview"}
+                </button>
+                <button
+                  onClick={() => exportBatchResults(scenarioResults)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-sm text-white"
+                >
+                  <Download className="w-4 h-4" />
+                  Export JSON
+                </button>
+                <button
+                  onClick={() => exportResearchData(scenarioResults)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-purple-600 hover:bg-purple-500 text-sm text-white"
+                >
+                  📄 Research TXT
+                </button>
+              </div>
             </div>
 
-            {scenarioResults.map((sr, idx) => (
-              <ResultsSection
-                key={sr.scenario.id}
-                title={`Scenario ${idx + 1}: ${sr.scenario.gridSize}×${sr.scenario.gridSize} - ${PATTERNS.find((p) => p.name === sr.scenario.pattern)?.label ||
-                  sr.scenario.pattern
-                  }`}
-                results={sr.results}
-                obstacles={sr.obstacles}
-                gridSize={sr.scenario.gridSize}
-              />
-            ))}
+            {/* JSON Preview */}
+            {showPreview && (
+              <div className="bg-neutral-800 rounded-lg p-4 max-h-96 overflow-auto">
+                <pre className="text-xs text-neutral-300 whitespace-pre-wrap">
+                  {JSON.stringify(
+                    scenarioResults.map((sr, idx) => ({
+                      scenario: `${idx + 1}: ${sr.scenario.gridSize}×${sr.scenario.gridSize} ${sr.scenario.pattern}`,
+                      constraints: {
+                        budget: sr.scenario.maxBudget ? `$${sr.scenario.maxBudget.toLocaleString()}` : "None",
+                        antennas: sr.scenario.maxAntennas || "None",
+                      },
+                      results: sr.results.map((r) => ({
+                        algo: algorithmLabels[r.algorithm] || r.algorithm,
+                        coverage: `${r.coverage_percentage.toFixed(1)}%`,
+                        cost: `$${r.total_cost.toLocaleString()}`,
+                        antennas: r.antennas.length,
+                      })),
+                    })),
+                    null,
+                    2
+                  )}
+                </pre>
+              </div>
+            )}
+
+            {scenarioResults.map((sr, idx) => {
+              const constraintParts: string[] = [];
+              if (sr.scenario.maxBudget) constraintParts.push(`💰$${sr.scenario.maxBudget.toLocaleString()}`);
+              if (sr.scenario.maxAntennas) constraintParts.push(`📡Max ${sr.scenario.maxAntennas}`);
+              const antTypes = sr.scenario.allowedAntennaTypes.join("/");
+              constraintParts.push(`🔧${antTypes}`);
+              const constraintStr = ` | ${constraintParts.join(" ")}`;
+
+              return (
+                <ResultsSection
+                  key={sr.scenario.id}
+                  title={`Scenario ${idx + 1}: ${sr.scenario.gridSize}×${sr.scenario.gridSize} - ${PATTERNS.find((p) => p.name === sr.scenario.pattern)?.label || sr.scenario.pattern}${constraintStr}`}
+                  results={sr.results}
+                  obstacles={sr.obstacles}
+                  gridSize={sr.scenario.gridSize}
+                  onExport={() => exportBatchResults([sr])}
+                />
+              );
+            })}
           </div>
         )}
       </div>
