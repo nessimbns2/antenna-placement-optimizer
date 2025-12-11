@@ -12,6 +12,7 @@ import {
   API_CONFIG,
   AntennaType,
   OptimizationResponse,
+  OptimizationProgress,
   AntennaSpec,
 } from "@/lib/api-config";
 import {
@@ -54,6 +55,16 @@ export default function Home() {
   const [gridSize, setGridSize] = useState(DEFAULT_ROWS); // 1:1 ratio
   const [forceCanvas, setForceCanvas] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Streaming optimization state
+  const [streamingMode, setStreamingMode] = useState(false);
+  const [streamProgress, setStreamProgress] = useState(0);
+  const [streamStats, setStreamStats] = useState<{
+    iteration: number;
+    temperature: number;
+    energy: number;
+    acceptanceRate: number;
+  } | null>(null);
 
   // Fetch antenna types on mount
   useEffect(() => {
@@ -787,6 +798,143 @@ export default function Home() {
     }
   };
 
+  // Streaming optimization for real-time visualization
+  const runStreamingOptimization = async (params: {
+    maxBudget?: number;
+    maxAntennas?: number;
+  }) => {
+    if (algorithm !== "simulated-annealing") {
+      // Fall back to regular optimization for non-SA algorithms
+      runOptimization(params);
+      return;
+    }
+
+    setIsOptimizing(true);
+    setStreamProgress(0);
+    setStreamStats(null);
+
+    try {
+      // Clear existing antennas
+      const currentGrid: CellType[][] = grid.map((row) =>
+        row.map((cell) => (cell === "antenna" ? "empty" : cell))
+      );
+      setGrid(currentGrid);
+      setOptimizationResult(null);
+
+      // Collect house positions
+      const obstacles: [number, number][] = [];
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          if (currentGrid[y][x] === "house") {
+            obstacles.push([x, y]);
+          }
+        }
+      }
+
+      // Create SSE request
+      const apiUrl = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.OPTIMIZE_STREAM}`;
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "text/event-stream",
+        },
+        body: JSON.stringify({
+          width: cols,
+          height: rows,
+          max_budget: params.maxBudget,
+          max_antennas: params.maxAntennas,
+          obstacles: obstacles,
+          algorithm: "simulated-annealing",
+          allowed_antenna_types: Array.from(allowedAntennaTypes),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: "Unknown error" }));
+        throw new Error(errorData.detail || "Streaming optimization failed");
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("No response body reader");
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const progress: OptimizationProgress = JSON.parse(line.slice(6));
+
+              // Update progress stats
+              setStreamProgress(progress.progress_percent);
+              setStreamStats({
+                iteration: progress.iteration,
+                temperature: progress.temperature,
+                energy: progress.best_energy,
+                acceptanceRate: progress.acceptance_rate,
+              });
+
+              // Update grid with current antennas - use functional update to avoid stale closure
+              setGrid((prevGrid) => {
+                const newGrid = prevGrid.map((row) =>
+                  row.map((cell) => (cell === "antenna" ? "empty" : cell))
+                ) as CellType[][];
+
+                for (const antenna of progress.antennas) {
+                  if (newGrid[antenna.y] && newGrid[antenna.y][antenna.x] !== "house") {
+                    newGrid[antenna.y][antenna.x] = "antenna";
+                  }
+                }
+                return newGrid;
+              });
+
+              // Handle completion
+              if (progress.event_type === "complete") {
+                setOptimizationResult({
+                  antennas: progress.antennas,
+                  coverage_percentage: progress.coverage_percentage || 0,
+                  users_covered: progress.users_covered,
+                  total_users: progress.total_users,
+                  user_coverage_percentage: progress.user_coverage_percentage || 0,
+                  total_cost: progress.total_cost,
+                  algorithm: "simulated-annealing",
+                  execution_time_ms: 0,
+                });
+              }
+
+              // Handle error
+              if (progress.event_type === "error") {
+                throw new Error(progress.detail || "Streaming error");
+              }
+            } catch (parseError) {
+              console.error("Failed to parse SSE data:", parseError);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Streaming optimization error:", error);
+      alert(
+        `Streaming optimization failed: ${error instanceof Error ? error.message : "Please try again."}`
+      );
+    } finally {
+      setIsOptimizing(false);
+      setStreamProgress(0);
+      setStreamStats(null);
+    }
+  };
+
   // Export/Import handlers
   const handleExport = () => {
     exportSolution(
@@ -869,8 +1017,12 @@ export default function Home() {
           antennaSpecs={antennaSpecs}
           allowedAntennaTypes={allowedAntennaTypes}
           setAllowedAntennaTypes={setAllowedAntennaTypes}
-          onOptimize={runOptimization}
+          onOptimize={streamingMode ? runStreamingOptimization : runOptimization}
           isOptimizing={isOptimizing}
+          streamingMode={streamingMode}
+          setStreamingMode={setStreamingMode}
+          streamProgress={streamProgress}
+          streamStats={streamStats}
         />
 
         <GridSeedingPanel

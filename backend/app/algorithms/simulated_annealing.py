@@ -593,3 +593,182 @@ class SimulatedAnnealingAlgorithm:
             "user_coverage_percentage": user_coverage_percentage,
             "total_cost": best_cost
         }
+
+    def optimize_streaming(self):
+        """
+        Run the simulated annealing optimization with streaming progress updates.
+        
+        This is a generator that yields progress updates at each temperature step
+        for real-time visualization.
+        
+        Yields:
+            Dictionary containing progress updates with current state
+        """
+        logger.info("🔥 Starting streaming simulated annealing optimization...")
+
+        # Generate initial solution
+        current_solution = self.generate_initial_solution()
+        current_energy, current_cost, current_users, current_cells = self.calculate_solution_metrics(
+            current_solution)
+
+        # Track best solution
+        best_solution = [ant.copy() for ant in current_solution]
+        best_energy = current_energy
+        best_metrics = (current_cost, current_users, current_cells)
+
+        logger.info(
+            f"📊 Initial solution: {len(current_solution)} antennas, "
+            f"energy={current_energy:.4f}, users={current_users}, cost=${current_cost}"
+        )
+
+        temperature = self.initial_temperature
+        iteration = 0
+        accepted_moves = 0
+        total_moves = 0
+        iterations_since_improvement = 0
+        
+        # Calculate total expected iterations for progress tracking
+        # Approximate: log(min_temp/init_temp) / log(cooling_rate)
+        if self.cooling_rate < 1.0 and self.min_temperature > 0:
+            import math
+            total_temp_steps = int(math.log(self.min_temperature / self.initial_temperature) / math.log(self.cooling_rate))
+        else:
+            total_temp_steps = 100  # fallback
+        
+        temp_step = 0
+
+        # Yield initial state
+        yield {
+            "event_type": "progress",
+            "iteration": iteration,
+            "temperature": round(temperature, 2),
+            "current_energy": round(current_energy, 4),
+            "best_energy": round(best_energy, 4),
+            "antennas": best_solution,
+            "users_covered": current_users,
+            "total_users": self.total_users,
+            "total_cost": current_cost,
+            "progress_percent": 0.0,
+            "acceptance_rate": 0.0
+        }
+
+        # Simulated annealing loop
+        while temperature > self.min_temperature:
+            for _ in range(self.iterations_per_temp):
+                iteration += 1
+                total_moves += 1
+                iterations_since_improvement += 1
+
+                # Generate neighbor solution
+                new_solution = self.generate_neighbor(current_solution)
+                new_energy, new_cost, new_users, new_cells = self.calculate_solution_metrics(
+                    new_solution)
+
+                # Calculate acceptance probability
+                accept_prob = self.acceptance_probability(
+                    current_energy, new_energy, temperature)
+
+                # Decide whether to accept the new solution
+                if random.random() < accept_prob:
+                    current_solution = new_solution
+                    current_energy = new_energy
+                    current_cost = new_cost
+                    current_users = new_users
+                    current_cells = new_cells
+                    accepted_moves += 1
+
+                    # Update best solution if this is better
+                    if current_energy < best_energy:
+                        best_solution = [ant.copy()
+                                         for ant in current_solution]
+                        best_energy = current_energy
+                        best_metrics = (
+                            current_cost, current_users, current_cells)
+                        iterations_since_improvement = 0
+
+                        logger.debug(
+                            f"✨ New best at iteration {iteration}: "
+                            f"{len(best_solution)} antennas, energy={best_energy:.4f}, "
+                            f"users={current_users}, cost=${current_cost}"
+                        )
+
+            # Early stopping check
+            if (self.early_stopping_iterations is not None and
+                    iterations_since_improvement >= self.early_stopping_iterations):
+                logger.info(
+                    f"⏹️ Early stopping: No improvement for {iterations_since_improvement} iterations"
+                )
+                break
+
+            # Cool down
+            temperature *= self.cooling_rate
+            temp_step += 1
+            
+            # Calculate progress percentage
+            progress = min(100.0, (temp_step / total_temp_steps) * 100)
+            
+            # Calculate acceptance rate
+            acceptance_rate = (accepted_moves / total_moves) if total_moves > 0 else 0.0
+
+            # Yield progress update at each temperature step
+            yield {
+                "event_type": "progress",
+                "iteration": iteration,
+                "temperature": round(temperature, 2),
+                "current_energy": round(current_energy, 4),
+                "best_energy": round(best_energy, 4),
+                "antennas": best_solution,
+                "users_covered": best_metrics[1],
+                "total_users": self.total_users,
+                "total_cost": best_metrics[0],
+                "progress_percent": round(progress, 1),
+                "acceptance_rate": round(acceptance_rate * 100, 1)
+            }
+
+        # Clean up: remove any antennas that don't cover houses
+        best_solution = self.remove_useless_antennas(best_solution)
+
+        # Recalculate final metrics after cleanup
+        if best_solution:
+            _, best_cost, best_users, best_cells = self.calculate_solution_metrics(
+                best_solution)
+        else:
+            best_cost, best_users, best_cells = 0, 0, 0
+
+        total_cells = self.width * self.height
+        coverage_percentage = (best_cells / total_cells *
+                               100) if total_cells > 0 else 0
+        user_coverage_percentage = (
+            best_users / self.total_users * 100) if self.total_users > 0 else 0
+
+        final_acceptance_rate = (
+            accepted_moves / total_moves) if total_moves > 0 else 0.0
+
+        logger.info(
+            f"🏁 Simulated annealing complete: {len(best_solution)} antennas placed"
+        )
+        logger.info(f"💰 Total cost: ${best_cost:,}")
+        logger.info(
+            f"👥 Users covered: {best_users}/{self.total_users} ({user_coverage_percentage:.2f}%)")
+        logger.info(
+            f"📡 Area coverage: {best_cells}/{total_cells} cells ({coverage_percentage:.2f}%)")
+        logger.info(
+            f"🔄 Total iterations: {iteration}, Acceptance rate: {final_acceptance_rate:.2%}")
+
+        # Yield final complete event
+        yield {
+            "event_type": "complete",
+            "iteration": iteration,
+            "temperature": round(temperature, 2),
+            "current_energy": round(best_energy, 4),
+            "best_energy": round(best_energy, 4),
+            "antennas": best_solution,
+            "users_covered": best_users,
+            "total_users": self.total_users,
+            "total_cost": best_cost,
+            "progress_percent": 100.0,
+            "acceptance_rate": round(final_acceptance_rate * 100, 1),
+            "coverage_percentage": round(coverage_percentage, 2),
+            "user_coverage_percentage": round(user_coverage_percentage, 2)
+        }
+
