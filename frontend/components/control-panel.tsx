@@ -65,7 +65,7 @@ export function ControlPanel({
   const algorithmOptions = [
     {
       value: "greedy",
-      label: "Greedy (Fast)",
+      label: "Greedy ",
       description: "Cost-optimized placement",
     },
     {

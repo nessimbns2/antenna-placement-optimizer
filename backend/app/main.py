@@ -16,6 +16,9 @@ from app.models import (
 from app.algorithms.greedy import GreedyAlgorithm
 from app.algorithms.genetic import GeneticAlgorithm
 from app.algorithms.simulated_annealing import SimulatedAnnealingAlgorithm
+from app.algorithms.tabu_search import TabuSearchAlgorithm
+from app.algorithms.hill_climbing import HillClimbingAlgorithm
+from app.algorithms.vns import VNSAlgorithm
 
 # Configure logging
 logging.basicConfig(
@@ -160,11 +163,44 @@ async def optimize_antenna_placement(request: OptimizationRequest) -> Optimizati
                 max_antennas=request.max_antennas
             )
             result = algorithm.optimize()
+        elif request.algorithm == "tabu-search":
+            algorithm = TabuSearchAlgorithm(
+                width=request.width,
+                height=request.height,
+                antenna_specs=ANTENNA_SPECS,
+                houses=request.obstacles,
+                allowed_antenna_types=request.allowed_antenna_types,
+                max_budget=request.max_budget,
+                max_antennas=request.max_antennas
+            )
+            result = algorithm.optimize()
+        elif request.algorithm == "hill-climbing":
+            algorithm = HillClimbingAlgorithm(
+                width=request.width,
+                height=request.height,
+                antenna_specs=ANTENNA_SPECS,
+                houses=request.obstacles,
+                allowed_antenna_types=request.allowed_antenna_types,
+                max_budget=request.max_budget,
+                max_antennas=request.max_antennas
+            )
+            result = algorithm.optimize()
+        elif request.algorithm == "vns":
+            algorithm = VNSAlgorithm(
+                width=request.width,
+                height=request.height,
+                antenna_specs=ANTENNA_SPECS,
+                houses=request.obstacles,
+                allowed_antenna_types=request.allowed_antenna_types,
+                max_budget=request.max_budget,
+                max_antennas=request.max_antennas
+            )
+            result = algorithm.optimize()
         else:
             # Placeholder for other algorithms
             raise HTTPException(
                 status_code=status.HTTP_501_NOT_IMPLEMENTED,
-                detail=f"Algorithm '{request.algorithm}' is not yet implemented. Available: greedy, genetic, simulated-annealing."
+                detail=f"Algorithm '{request.algorithm}' is not yet implemented. Available: greedy, genetic, simulated-annealing, tabu-search, hill-climbing, vns."
             )
 
         execution_time_ms = (time.time() - start_time) * 1000

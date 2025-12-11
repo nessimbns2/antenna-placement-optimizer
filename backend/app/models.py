@@ -51,7 +51,7 @@ class OptimizationRequest(BaseModel):
     )
     algorithm: str = Field(
         default="greedy",
-        description="Algorithm to use: greedy, genetic, simulated-annealing, brute-force"
+        description="Algorithm to use: greedy, genetic, simulated-annealing, tabu-search, hill-climbing, vns, brute-force"
     )
     allowed_antenna_types: List[AntennaType] = Field(
         default_factory=lambda: [
@@ -63,7 +63,7 @@ class OptimizationRequest(BaseModel):
     @classmethod
     def validate_algorithm(cls, v: str) -> str:
         """Validate algorithm name."""
-        allowed = ["greedy", "genetic", "simulated-annealing", "brute-force"]
+        allowed = ["greedy", "genetic", "simulated-annealing", "tabu-search", "hill-climbing", "vns", "brute-force"]
         if v.lower() not in allowed:
             raise ValueError(f"Algorithm must be one of: {', '.join(allowed)}")
         return v.lower()

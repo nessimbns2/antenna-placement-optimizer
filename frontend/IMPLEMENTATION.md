@@ -89,7 +89,7 @@ Complete backend specification including:
 
 ## Algorithm Descriptions
 
-### Greedy (Fast)
+### Greedy 
 - **Approach**: Iteratively selects the position that covers the most uncovered houses
 - **Complexity**: O(n² × m²) where n×m is grid size
 - **Best for**: Quick solutions, large grids

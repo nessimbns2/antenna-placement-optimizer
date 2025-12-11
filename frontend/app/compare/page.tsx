@@ -13,12 +13,16 @@ export default function ComparePage() {
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<OptimizationResponse[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
+  const [obstacles, setObstacles] = useState<[number, number][]>([]);
 
-  const algorithms = ["greedy", "genetic", "simulated-annealing"];
+  const algorithms = ["greedy", "genetic", "simulated-annealing", "tabu-search", "hill-climbing", "vns"];
   const algorithmLabels: Record<string, string> = {
     greedy: "Greedy",
     genetic: "Genetic",
     "simulated-annealing": "Simulated Annealing",
+    "tabu-search": "Tabu Search",
+    "hill-climbing": "Hill Climbing",
+    vns: "VNS",
   };
 
   const toggleAntennaType = (type: AntennaType) => {
@@ -56,7 +60,8 @@ export default function ComparePage() {
 
     try {
       // Generate a single set of obstacles for fair comparison
-      const obstacles = generateRandomObstacles(gridSize);
+      const newObstacles = generateRandomObstacles(gridSize);
+      setObstacles(newObstacles);
 
       const promises = algorithms.map(async (algo) => {
         try {
@@ -68,7 +73,7 @@ export default function ComparePage() {
               body: JSON.stringify({
                 width: gridSize,
                 height: gridSize,
-                obstacles: obstacles,
+                obstacles: newObstacles,
                 algorithm: algo,
                 allowed_antenna_types: Array.from(allowedAntennaTypes),
               }),
@@ -161,8 +166,8 @@ export default function ComparePage() {
                       key={type}
                       onClick={() => toggleAntennaType(type)}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${allowedAntennaTypes.has(type)
-                          ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20"
-                          : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
+                        ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20"
+                        : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
                         }`}
                     >
                       {type}
@@ -178,8 +183,8 @@ export default function ComparePage() {
               onClick={runComparison}
               disabled={isRunning}
               className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${isRunning
-                  ? "bg-neutral-800 text-neutral-500 cursor-not-allowed"
-                  : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-lg shadow-blue-900/20"
+                ? "bg-neutral-800 text-neutral-500 cursor-not-allowed"
+                : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-lg shadow-blue-900/20"
                 }`}
             >
               {isRunning ? (
@@ -230,8 +235,85 @@ export default function ComparePage() {
                 suffix="ms"
               />
             </div>
+
+            {/* Grid Visualizations */}
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold text-neutral-300 mb-4">
+                Antenna Placements
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {results.map((result) => (
+                  <ComparisonGrid
+                    key={result.algorithm}
+                    result={result}
+                    gridSize={gridSize}
+                    obstacles={obstacles}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// Grid visualization component
+function ComparisonGrid({
+  result,
+  gridSize,
+  obstacles,
+}: {
+  result: OptimizationResponse;
+  gridSize: number;
+  obstacles: [number, number][];
+}) {
+  const cellSize = Math.max(4, Math.min(12, 240 / gridSize));
+
+  return (
+    <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
+      <div className="mb-3">
+        <h4 className="text-sm font-semibold text-neutral-300 capitalize">
+          {result.algorithm.replace("-", " ")}
+        </h4>
+        <div className="text-xs text-neutral-500 mt-1">
+          {result.antennas.length} antennas • ${result.total_cost.toLocaleString()}
+        </div>
+      </div>
+      <div
+        className="relative bg-neutral-950 rounded-lg overflow-hidden border border-neutral-800"
+        style={{
+          width: `${cellSize * gridSize}px`,
+          height: `${cellSize * gridSize}px`,
+        }}
+      >
+        {/* Houses */}
+        {obstacles.map(([x, y], idx) => (
+          <div
+            key={`house-${idx}`}
+            className="absolute bg-amber-500/40 border border-amber-600/60"
+            style={{
+              left: `${x * cellSize}px`,
+              top: `${y * cellSize}px`,
+              width: `${cellSize}px`,
+              height: `${cellSize}px`,
+            }}
+          />
+        ))}
+        {/* Antennas */}
+        {result.antennas.map((antenna, idx) => (
+          <div
+            key={`antenna-${idx}`}
+            className="absolute rounded-full bg-cyan-500/60 border-2 border-cyan-400"
+            style={{
+              left: `${antenna.x * cellSize}px`,
+              top: `${antenna.y * cellSize}px`,
+              width: `${cellSize}px`,
+              height: `${cellSize}px`,
+            }}
+          />
+        ))}
       </div>
     </div>
   );

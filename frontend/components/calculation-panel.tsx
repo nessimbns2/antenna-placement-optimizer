@@ -6,9 +6,23 @@ import { cn } from "@/lib/utils";
 import { AntennaType, AntennaSpec } from "@/lib/api-config";
 
 interface CalculationPanelProps {
-  algorithm: "greedy" | "genetic" | "simulated-annealing" | "brute-force";
+  algorithm:
+    | "greedy"
+    | "genetic"
+    | "simulated-annealing"
+    | "tabu-search"
+    | "hill-climbing"
+    | "vns"
+    | "brute-force";
   setAlgorithm: (
-    a: "greedy" | "genetic" | "simulated-annealing" | "brute-force"
+    a:
+      | "greedy"
+      | "genetic"
+      | "simulated-annealing"
+      | "tabu-search"
+      | "hill-climbing"
+      | "vns"
+      | "brute-force"
   ) => void;
   antennaSpecs: AntennaSpec[];
   allowedAntennaTypes: Set<AntennaType>;
@@ -56,7 +70,7 @@ export function CalculationPanel({
   const algorithmOptions = [
     {
       value: "greedy",
-      label: "Greedy (Fast)",
+      label: "Greedy ",
       description: "Score-based placement (users covered / cost)",
     },
     {
@@ -68,6 +82,21 @@ export function CalculationPanel({
       value: "simulated-annealing",
       label: "Simulated Annealing",
       description: "Temperature-based",
+    },
+    {
+      value: "tabu-search",
+      label: "Tabu Search",
+      description: "Avoids cycling with tabu list",
+    },
+    {
+      value: "hill-climbing",
+      label: "Hill Climbing",
+      description: "Fast local search",
+    },
+    {
+      value: "vns",
+      label: "VNS",
+      description: "Variable neighborhood search",
     },
     {
       value: "brute-force",
@@ -216,6 +245,10 @@ export function CalculationPanel({
             onChange={(e) =>
               setAlgorithm(
                 e.target.value as
+                  | "greedy"
+                  | "genetic"
+                  | "simulated-annealing"
+                  | "brute-force"
                   | "greedy"
                   | "genetic"
                   | "simulated-annealing"

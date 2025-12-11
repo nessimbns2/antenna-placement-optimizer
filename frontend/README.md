@@ -7,7 +7,7 @@ This is a Next.js application designed to simulate and solve the Cellular Antenn
 - **Interactive Grid Map**: Visualize the problem space with houses (demand points) and antennas.
 - **Control Panel**: Configure grid size, antenna radius, and select optimization algorithms.
 - **Multiple Algorithms**: Choose from different optimization strategies:
-  - **Greedy (Fast)**: Quick approximation using Set Cover approach
+  - **Greedy **: Quick approximation using Set Cover approach
   - **Genetic Algorithm**: Evolutionary optimization with population-based search
   - **Simulated Annealing**: Temperature-based probabilistic optimization
   - **Brute Force**: Exhaustive search (limited scope)

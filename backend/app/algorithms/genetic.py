@@ -112,7 +112,6 @@ class GeneticAlgorithm:
                 "y": y,
                 "type": antenna_type,
                 "radius": spec.radius,
-                "max_users": spec.max_users,
                 "cost": spec.cost
             }
 
@@ -260,7 +259,7 @@ class GeneticAlgorithm:
                     spec = self.antenna_specs[antenna_type]
                     antenna = {
                         "x": x, "y": y, "type": antenna_type,
-                        "radius": spec.radius, "max_users": spec.max_users, "cost": spec.cost
+                        "radius": spec.radius, "cost": spec.cost
                     }
 
                     # Check budget constraint
@@ -292,7 +291,6 @@ class GeneticAlgorithm:
                     "y": old_antenna['y'],
                     "type": antenna_type,
                     "radius": spec.radius,
-                    "max_users": spec.max_users,
                     "cost": spec.cost
                 }
 
