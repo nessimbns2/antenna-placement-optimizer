@@ -1,4 +1,6 @@
-from typing import List, Tuple, Set, Dict
+from typing import List, Tuple, Set, Dict, Optional
+import heapq
+import itertools
 import logging
 from app.models import AntennaType, AntennaSpec
 
@@ -8,7 +10,10 @@ USERS_PER_HOUSE = 20  # Each house contains 20 users
 
 
 class GreedyAlgorithm:
-    """Greedy algorithm for antenna placement using score-based optimization."""
+    """Greedy algorithm for antenna placement using score-based optimization.
+    Improved: candidate generation + heap with lazy updates to avoid scanning entire grid
+    every iteration. Same public API as original class (optimize(), find_best_antenna_placement()).
+    """
 
     def __init__(
         self,
@@ -20,18 +25,6 @@ class GreedyAlgorithm:
         max_budget: int | None = None,
         max_antennas: int | None = None
     ):
-        """
-        Initialize the greedy algorithm.
-
-        Args:
-            width: Grid width
-            height: Grid height
-            antenna_specs: Dictionary of antenna specifications
-            houses: List of house coordinates (each has 20 users)
-            allowed_antenna_types: List of allowed antenna types (None = all types allowed)
-            max_budget: Maximum budget constraint (None = no limit)
-            max_antennas: Maximum number of antennas constraint (None = no limit)
-        """
         self.width = width
         self.height = height
         self.max_budget = max_budget
@@ -49,55 +42,68 @@ class GreedyAlgorithm:
         self.covered_houses: Set[Tuple[int, int]] = set()
         self.placed_antennas: List[Dict] = []
 
+        # --- New precomputation: offsets_by_radius and candidate generation ---
+        # Precompute circle offsets for each radius once
+        self.offsets_by_radius: Dict[int, List[Tuple[int, int]]] = {}
+        for spec in self.antenna_specs.values():
+            r = spec.radius
+            if r not in self.offsets_by_radius:
+                offs = []
+                rr = r * r
+                for dx in range(-r, r + 1):
+                    for dy in range(-r, r + 1):
+                        if dx * dx + dy * dy <= rr:
+                            offs.append((dx, dy))
+                self.offsets_by_radius[r] = offs
+
+        # Build candidates: map (cx, cy, antenna_type) -> set(houses it would cover)
+        self.candidates_houses: Dict[Tuple[int, int, AntennaType], Set[Tuple[int, int]]] = {}
+        for (hx, hy) in self.houses:
+            for antenna_type, spec in self.antenna_specs.items():
+                offs = self.offsets_by_radius[spec.radius]
+                for dx, dy in offs:
+                    cx, cy = hx - dx, hy - dy
+                    # Candidate center must be inside grid and not a house
+                    if 0 <= cx < self.width and 0 <= cy < self.height and (cx, cy) not in self.houses:
+                        key = (cx, cy, antenna_type)
+                        if key not in self.candidates_houses:
+                            self.candidates_houses[key] = set()
+                        self.candidates_houses[key].add((hx, hy))
+
+        # Build initial heap of candidates with initial scores
+        # Heap entries: (-score, counter, key)
+        self.heap: List[Tuple[float, int, Tuple[int, int, AntennaType]]] = []
+        self._counter = itertools.count()
+        for key, houses_set in self.candidates_houses.items():
+            antenna_type = key[2]
+            cost = self.antenna_specs[antenna_type].cost
+            new_users = len(houses_set) * USERS_PER_HOUSE
+            score = new_users / cost if cost > 0 and new_users > 0 else -1.0
+            if score > 0:
+                heapq.heappush(self.heap, (-score, next(self._counter), key))
+
         logger.info(
             f"Initialized GreedyAlgorithm: {width}x{height} grid, "
-            f"max_budget={max_budget}, max_antennas={max_antennas}, {len(houses)} houses"
+            f"max_budget={max_budget}, max_antennas={max_antennas}, {len(houses)} houses, "
+            f"{len(self.candidates_houses)} candidates, heap_size={len(self.heap)}"
         )
 
+    # Keep your get_coverage_area and count_new_coverage methods (unchanged)
     def get_coverage_area(self, x: int, y: int, radius: int) -> Tuple[Set[Tuple[int, int]], Set[Tuple[int, int]]]:
-        """
-        Calculate the coverage area for an antenna at position (x, y) with given radius.
-
-        Args:
-            x: X coordinate
-            y: Y coordinate
-            radius: Coverage radius
-
-        Returns:
-            Tuple of (covered cells, covered houses)
-        """
         covered_cells = set()
         covered_houses = set()
-
         for dx in range(-radius, radius + 1):
             for dy in range(-radius, radius + 1):
-                # Check if within circle (Euclidean distance)
                 if dx * dx + dy * dy <= radius * radius:
                     nx, ny = x + dx, y + dy
-
-                    # Check if within grid bounds
                     if 0 <= nx < self.width and 0 <= ny < self.height:
                         if (nx, ny) in self.houses:
-                            # This is a house - can be covered but antenna can't be placed here
                             covered_houses.add((nx, ny))
                         else:
-                            # Regular cell
                             covered_cells.add((nx, ny))
-
         return covered_cells, covered_houses
 
     def count_new_coverage(self, x: int, y: int, radius: int) -> Tuple[int, int]:
-        """
-        Count how many new cells and users would be covered by placing an antenna at (x, y).
-
-        Args:
-            x: X coordinate
-            y: Y coordinate
-            radius: Coverage radius
-
-        Returns:
-            Tuple of (new cells covered, new users covered)
-        """
         cells, houses = self.get_coverage_area(x, y, radius)
         new_cells = cells - self.covered_cells
         new_houses = houses - self.covered_houses
@@ -105,33 +111,12 @@ class GreedyAlgorithm:
         return len(new_cells), new_users
 
     def is_valid_position(self, x: int, y: int) -> bool:
-        """
-        Check if a position is valid for antenna placement.
-        Position must be within grid bounds and not on a house.
-
-        Args:
-            x: X coordinate
-            y: Y coordinate
-
-        Returns:
-            True if valid, False otherwise
-        """
         return (0 <= x < self.width and
                 0 <= y < self.height and
                 (x, y) not in self.houses)
 
     def antenna_covers_houses(self, x: int, y: int, radius: int) -> bool:
-        """
-        Check if an antenna at (x, y) with given radius covers at least one house.
-
-        Args:
-            x: X coordinate
-            y: Y coordinate
-            radius: Coverage radius
-
-        Returns:
-            True if antenna covers at least one house, False otherwise
-        """
+        # Keep a quick check; used in cleanup or edge cases
         for house in self.houses:
             hx, hy = house
             dist_sq = (x - hx) * (x - hx) + (y - hy) * (y - hy)
@@ -140,87 +125,58 @@ class GreedyAlgorithm:
         return False
 
     def calculate_score(self, new_users: int, cost: int) -> float:
-        """
-        Calculate the score for an antenna placement.
-        Score = New Users Covered / Cost
-
-        Args:
-            new_users: Number of new users that will be covered
-            cost: Cost of the antenna
-
-        Returns:
-            Score value (higher is better)
-        """
         if cost == 0:
             return 0
-
-        # If no new users are covered, this antenna adds no value
         if new_users == 0:
-            return -1.0  # Negative score to prevent placement
-
-        # Calculate score: users covered per dollar spent
-        score = new_users / cost
-
-        return score
+            return -1.0
+        return new_users / cost
 
     def find_best_antenna_placement(self) -> Tuple[Tuple[int, int], AntennaType, float] | None:
         """
-        Find the best antenna placement using the score system.
-        Score = New Users Covered / Cost
-
-        Returns:
-            Tuple of (position, antenna_type, score) or None if no valid placement
+        New implementation: use the precomputed heap of candidates and lazy updates.
+        Pops candidates until a valid current-best placement is found (or heap empties).
+        Returns (position, antenna_type, score) or None.
         """
-        best_position = None
-        best_antenna_type = None
-        best_score = float('-inf')  # Higher is better
+        # Pop from heap until we find a valid placement or heap empties
+        while self.heap:
+            neg_score, _, key = heapq.heappop(self.heap)
+            cx, cy, antenna_type = key
 
-        # Try all antenna types
-        for antenna_type, spec in self.antenna_specs.items():
-            # Try all positions
-            for x in range(self.width):
-                for y in range(self.height):
-                    if not self.is_valid_position(x, y):
-                        continue
+            # Skip if we already placed an antenna at this exact position
+            if any(ant['x'] == cx and ant['y'] == cy for ant in self.placed_antennas):
+                continue
 
-                    # Skip if antenna already placed here
-                    if any(ant['x'] == x and ant['y'] == y for ant in self.placed_antennas):
-                        continue
+            # Candidate's houses (precomputed)
+            candidate_houses = self.candidates_houses.get(key)
+            if not candidate_houses:
+                continue
 
-                    # Skip positions that don't cover any houses
-                    if not self.antenna_covers_houses(x, y, spec.radius):
-                        continue
+            # Compute actual uncovered houses for this candidate right now
+            uncovered = candidate_houses - self.covered_houses
+            new_users = len(uncovered) * USERS_PER_HOUSE
+            cost = self.antenna_specs[antenna_type].cost
+            score_now = self.calculate_score(new_users=new_users, cost=cost)
 
-                    # Calculate new coverage
-                    _, new_users = self.count_new_coverage(x, y, spec.radius)
+            # If score is non-positive, skip permanently (no benefit)
+            if score_now <= 0:
+                continue
 
-                    # Calculate score for this placement
-                    score = self.calculate_score(
-                        new_users=new_users,
-                        cost=spec.cost
-                    )
+            # If the popped score was stale (different), push updated and continue
+            if -neg_score != score_now:
+                heapq.heappush(self.heap, (-score_now, next(self._counter), key))
+                continue
 
-                    # Greedy principle: Select the placement with highest score
-                    if score > best_score:
-                        best_score = score
-                        best_position = (x, y)
-                        best_antenna_type = antenna_type
+            # Final checks: position still valid (within grid and not a house)
+            if not self.is_valid_position(cx, cy):
+                continue
 
-        if best_position is None:
-            return None
+            # This candidate is the current best — return it for placement
+            return ( (cx, cy), antenna_type, score_now )
 
-        return best_position, best_antenna_type, best_score
+        # Heap exhausted or no valid candidate
+        return None
 
     def remove_useless_antennas(self, antennas: List[Dict]) -> List[Dict]:
-        """
-        Remove antennas that don't cover any houses.
-
-        Args:
-            antennas: List of antenna placements
-
-        Returns:
-            Filtered list with only useful antennas
-        """
         useful_antennas = []
         removed_count = 0
 
@@ -241,16 +197,10 @@ class GreedyAlgorithm:
         return useful_antennas
 
     def optimize(self) -> Dict:
-        """
-        Run the greedy algorithm using score-based optimization.
-        At each step, place the antenna with the highest score until constraints are met.
-
-        Returns:
-            Dictionary with optimization results including antenna positions, coverage, and costs
-        """
-        # Pretty header
+        # All logic kept same as before; no change required here except it now
+        # benefits from optimized find_best_antenna_placement
         print("\n" + "="*70)
-        print(f"🚀 SCORE-BASED GREEDY OPTIMIZATION")
+        print(f"🚀 SCORE-BASED GREEDY OPTIMIZATION (optimized candidates + heap)")
         print("="*70)
         print(
             f"🏘️  Houses: {len(self.houses)} (Total users: {len(self.houses) * USERS_PER_HOUSE})")
@@ -266,20 +216,18 @@ class GreedyAlgorithm:
 
         print("="*70 + "\n")
 
-        logger.info(f"Starting score-based greedy algorithm")
+        logger.info(f"Starting score-based greedy algorithm (optimized)")
 
         total_users = len(self.houses) * USERS_PER_HOUSE
         iteration = 0
-        max_iterations = self.width * self.height  # Prevent infinite loop
+        max_iterations = max(1, self.width * self.height)  # safety cap
 
         while iteration < max_iterations:
             iteration += 1
 
-            # Check current state
             total_cost = sum(ant["cost"] for ant in self.placed_antennas)
             num_antennas = len(self.placed_antennas)
 
-            # Check constraints
             if self.max_antennas and num_antennas >= self.max_antennas:
                 print(f"\n📡 Antenna limit reached: {num_antennas}")
                 break
@@ -288,7 +236,6 @@ class GreedyAlgorithm:
                 print(f"\n💰 Budget limit reached: ${total_cost:,}")
                 break
 
-            # Find best antenna placement using score
             result = self.find_best_antenna_placement()
 
             if result is None:
@@ -304,7 +251,6 @@ class GreedyAlgorithm:
             position, antenna_type, score = result
             spec = self.antenna_specs[antenna_type]
 
-            # Stop if score is not positive (antenna would add no value)
             if score <= 0:
                 logger.info(
                     f"Best available antenna has non-positive score ({score:.4f}). "
@@ -314,7 +260,6 @@ class GreedyAlgorithm:
                     f"\n✋ Stopped: Best score is {score:.4f} (no value added)")
                 break
 
-            # Check if we can afford this antenna
             if self.max_budget and (total_cost + spec.cost) > self.max_budget:
                 logger.info(
                     f"Budget limit reached: ${total_cost} (next antenna would cost ${spec.cost})")
@@ -331,19 +276,18 @@ class GreedyAlgorithm:
             }
             self.placed_antennas.append(antenna_data)
 
-            # Update coverage
-            cells, houses = self.get_coverage_area(
-                position[0], position[1], spec.radius)
-            self.covered_cells.update(cells)
+            # Update coverage (houses + cells)
+            _, houses = self.get_coverage_area(position[0], position[1], spec.radius)
             new_houses = houses - self.covered_houses
             self.covered_houses.update(houses)
+            cells, _ = self.get_coverage_area(position[0], position[1], spec.radius)
+            self.covered_cells.update(cells)
 
             users_covered = len(self.covered_houses) * USERS_PER_HOUSE
             current_coverage = (users_covered / total_users *
                                 100) if total_users > 0 else 0
             new_cost = total_cost + spec.cost
 
-            # Pretty progress print every antenna
             antenna_emoji = {"Femto": "📱", "Pico": "📡",
                              "Micro": "🗼", "Macro": "🏗️"}
             emoji = antenna_emoji.get(antenna_type.value, "📡")
@@ -357,10 +301,9 @@ class GreedyAlgorithm:
                 f"total coverage: {current_coverage:.1f}%"
             )
 
-        # Calculate final statistics
+        # Final stats (same as before)
         total_cells = self.width * self.height - len(self.houses)
-        coverage_percentage = (len(self.covered_cells) /
-                               total_cells * 100) if total_cells > 0 else 0
+        coverage_percentage = (len(self.covered_cells) / total_cells * 100) if total_cells > 0 else 0
 
         users_covered = len(self.covered_houses) * USERS_PER_HOUSE
         user_coverage_percentage = (
@@ -368,7 +311,6 @@ class GreedyAlgorithm:
 
         total_cost = sum(ant["cost"] for ant in self.placed_antennas)
 
-        # Pretty summary
         print("\n" + "="*70)
         print("✨ OPTIMIZATION COMPLETE")
         print("="*70)
@@ -387,12 +329,11 @@ class GreedyAlgorithm:
             f"{users_covered}/{total_users} users covered ({user_coverage_percentage:.2f}%)"
         )
 
-        # Final cleanup: remove any antennas that don't cover houses
+        # Cleanup remains the same
         original_count = len(self.placed_antennas)
         self.placed_antennas = self.remove_useless_antennas(
             self.placed_antennas)
 
-        # Recalculate metrics after cleanup if any were removed
         if len(self.placed_antennas) < original_count:
             total_cost = sum(ant["cost"] for ant in self.placed_antennas)
             users_covered = len(self.covered_houses) * USERS_PER_HOUSE
