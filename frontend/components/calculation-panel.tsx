@@ -15,6 +15,16 @@ interface CalculationPanelProps {
   setAllowedAntennaTypes: (types: Set<AntennaType>) => void;
   onOptimize: (params: { maxBudget?: number; maxAntennas?: number }) => void;
   isOptimizing: boolean;
+  // Streaming visualization props
+  streamingMode?: boolean;
+  setStreamingMode?: (mode: boolean) => void;
+  streamProgress?: number;
+  streamStats?: {
+    iteration: number;
+    temperature: number;
+    energy: number;
+    acceptanceRate: number;
+  } | null;
 }
 
 export function CalculationPanel({
@@ -25,6 +35,10 @@ export function CalculationPanel({
   setAllowedAntennaTypes,
   onOptimize,
   isOptimizing,
+  streamingMode = false,
+  setStreamingMode,
+  streamProgress = 0,
+  streamStats = null,
 }: CalculationPanelProps) {
   const [budgetLimit, setBudgetLimit] = useState<number | "">(100000);
   const [maxAntennas, setMaxAntennas] = useState<number | "">(50);
@@ -216,10 +230,10 @@ export function CalculationPanel({
             onChange={(e) =>
               setAlgorithm(
                 e.target.value as
-                  | "greedy"
-                  | "genetic"
-                  | "simulated-annealing"
-                  | "brute-force"
+                | "greedy"
+                | "genetic"
+                | "simulated-annealing"
+                | "brute-force"
               )
             }
             className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none transition-all text-slate-300"
@@ -241,6 +255,26 @@ export function CalculationPanel({
         {/* Run Button */}
         <div className="space-y-2">
           <label className="text-sm text-slate-400 font-medium">Execute</label>
+
+          {/* Streaming Mode Toggle - only show for simulated annealing */}
+          {algorithm === "simulated-annealing" && setStreamingMode && (
+            <div className="flex items-center gap-2 mb-2">
+              <input
+                type="checkbox"
+                id="streaming-mode"
+                checked={streamingMode}
+                onChange={(e) => setStreamingMode(e.target.checked)}
+                className="w-4 h-4 accent-cyan-500 cursor-pointer"
+              />
+              <label
+                htmlFor="streaming-mode"
+                className="text-xs text-cyan-400 cursor-pointer"
+              >
+                🎬 Watch algorithm in real-time
+              </label>
+            </div>
+          )}
+
           <button
             onClick={handleOptimize}
             disabled={isOptimizing}
@@ -249,15 +283,54 @@ export function CalculationPanel({
             {isOptimizing ? (
               <>
                 <RefreshCw className="animate-spin" size={18} />
-                <span>Computing...</span>
+                <span>{streamingMode && algorithm === "simulated-annealing" ? "Visualizing..." : "Computing..."}</span>
               </>
             ) : (
               <>
                 <Play fill="currentColor" size={18} />
-                <span>Run Optimizer</span>
+                <span>{streamingMode && algorithm === "simulated-annealing" ? "Watch Optimization" : "Run Optimizer"}</span>
               </>
             )}
           </button>
+
+          {/* Progress Bar - show when streaming */}
+          {isOptimizing && streamingMode && algorithm === "simulated-annealing" && (
+            <div className="mt-3 space-y-2">
+              <div className="flex justify-between text-xs text-slate-400">
+                <span>Progress</span>
+                <span>{streamProgress.toFixed(1)}%</span>
+              </div>
+              <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-200"
+                  style={{ width: `${streamProgress}%` }}
+                />
+              </div>
+
+              {/* Real-time Stats */}
+              {streamStats && (
+                <div className="grid grid-cols-2 gap-2 text-xs mt-2">
+                  <div className="bg-slate-800/50 rounded px-2 py-1">
+                    <span className="text-slate-500">🔄 Iteration:</span>
+                    <span className="text-cyan-400 ml-1">{streamStats.iteration.toLocaleString()}</span>
+                  </div>
+                  <div className="bg-slate-800/50 rounded px-2 py-1">
+                    <span className="text-slate-500">🌡️ Temp:</span>
+                    <span className="text-orange-400 ml-1">{streamStats.temperature.toFixed(1)}</span>
+                  </div>
+                  <div className="bg-slate-800/50 rounded px-2 py-1">
+                    <span className="text-slate-500">⚡ Energy:</span>
+                    <span className="text-yellow-400 ml-1">{streamStats.energy.toFixed(2)}</span>
+                  </div>
+                  <div className="bg-slate-800/50 rounded px-2 py-1">
+                    <span className="text-slate-500">✓ Accept:</span>
+                    <span className="text-green-400 ml-1">{streamStats.acceptanceRate.toFixed(1)}%</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="text-xs mt-2 space-y-1">
             {!useBudgetLimit && !useMaxAntennas && (
               <div className="text-purple-400">🎯 Goal: Cover all users</div>
