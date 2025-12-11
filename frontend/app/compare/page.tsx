@@ -207,6 +207,9 @@ export default function ComparePage() {
               <h2 className="text-lg font-semibold">Results Analysis</h2>
             </div>
 
+            {/* Algorithm Ranking Card */}
+            <AlgorithmRanking results={results} />
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Coverage Chart */}
               <VerticalBarChart
@@ -259,6 +262,107 @@ export default function ComparePage() {
   );
 }
 
+// Algorithm Ranking Component
+function AlgorithmRanking({ results }: { results: OptimizationResponse[] }) {
+  // Calculate rankings for each metric
+  const rankByCost = [...results].sort((a, b) => a.total_cost - b.total_cost);
+  const rankByCoverage = [...results].sort((a, b) => b.coverage_percentage - a.coverage_percentage);
+  const rankByTime = [...results].sort((a, b) => a.execution_time_ms - b.execution_time_ms);
+
+  // Calculate overall score (lower is better)
+  const scores = results.map((result) => {
+    const costRank = rankByCost.findIndex((r) => r.algorithm === result.algorithm) + 1;
+    const coverageRank = rankByCoverage.findIndex((r) => r.algorithm === result.algorithm) + 1;
+    const timeRank = rankByTime.findIndex((r) => r.algorithm === result.algorithm) + 1;
+
+    // Weighted score: coverage is most important, then cost, then time
+    const score = coverageRank * 2 + costRank * 1.5 + timeRank * 0.5;
+
+    return {
+      algorithm: result.algorithm,
+      costRank,
+      coverageRank,
+      timeRank,
+      overallScore: score,
+    };
+  });
+
+  const rankedScores = [...scores].sort((a, b) => a.overallScore - b.overallScore);
+
+  const getRankColor = (rank: number) => {
+    if (rank === 1) return "text-yellow-400";
+    if (rank === 2) return "text-slate-300";
+    if (rank === 3) return "text-amber-600";
+    return "text-neutral-500";
+  };
+
+  const getRankBadge = (rank: number) => {
+    if (rank === 1) return "🥇";
+    if (rank === 2) return "🥈";
+    if (rank === 3) return "🥉";
+    return `#${rank}`;
+  };
+
+  return (
+    <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
+      <h3 className="text-sm font-semibold text-neutral-300 mb-4">Algorithm Rankings</h3>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-neutral-800">
+              <th className="text-left py-3 px-2 text-neutral-400 font-medium">Rank</th>
+              <th className="text-left py-3 px-2 text-neutral-400 font-medium">Algorithm</th>
+              <th className="text-center py-3 px-2 text-neutral-400 font-medium">Coverage</th>
+              <th className="text-center py-3 px-2 text-neutral-400 font-medium">Cost</th>
+              <th className="text-center py-3 px-2 text-neutral-400 font-medium">Time</th>
+              <th className="text-center py-3 px-2 text-neutral-400 font-medium">Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rankedScores.map((score, index) => (
+              <tr key={score.algorithm} className="border-b border-neutral-800/50 hover:bg-neutral-800/30 transition-colors">
+                <td className="py-3 px-2">
+                  <span className={`text-lg ${getRankColor(index + 1)}`}>
+                    {getRankBadge(index + 1)}
+                  </span>
+                </td>
+                <td className="py-3 px-2">
+                  <span className="text-neutral-200 font-medium capitalize">
+                    {score.algorithm.replace("-", " ")}
+                  </span>
+                </td>
+                <td className="text-center py-3 px-2">
+                  <span className={`inline-block px-2 py-1 rounded text-xs ${getRankColor(score.coverageRank)}`}>
+                    #{score.coverageRank}
+                  </span>
+                </td>
+                <td className="text-center py-3 px-2">
+                  <span className={`inline-block px-2 py-1 rounded text-xs ${getRankColor(score.costRank)}`}>
+                    #{score.costRank}
+                  </span>
+                </td>
+                <td className="text-center py-3 px-2">
+                  <span className={`inline-block px-2 py-1 rounded text-xs ${getRankColor(score.timeRank)}`}>
+                    #{score.timeRank}
+                  </span>
+                </td>
+                <td className="text-center py-3 px-2">
+                  <span className="text-neutral-400 text-xs">
+                    {score.overallScore.toFixed(1)}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-4 text-xs text-neutral-500">
+        <p>* Overall score is weighted: Coverage (2x) + Cost (1.5x) + Time (0.5x). Lower score is better.</p>
+      </div>
+    </div>
+  );
+}
+
 // Grid visualization component
 function ComparisonGrid({
   result,
@@ -270,6 +374,17 @@ function ComparisonGrid({
   obstacles: [number, number][];
 }) {
   const cellSize = Math.max(4, Math.min(12, 240 / gridSize));
+
+  // Antenna type colors
+  const antennaColors: Record<string, { bg: string; border: string }> = {
+    Femto: { bg: "bg-purple-500/70", border: "border-purple-400" },
+    Pico: { bg: "bg-cyan-500/70", border: "border-cyan-400" },
+    Micro: { bg: "bg-green-500/70", border: "border-green-400" },
+    Macro: { bg: "bg-red-500/70", border: "border-red-400" },
+  };
+
+  // Get unique antenna types in this result
+  const uniqueTypes = Array.from(new Set(result.antennas.map((a) => a.type)));
 
   return (
     <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-4">
@@ -302,18 +417,38 @@ function ComparisonGrid({
           />
         ))}
         {/* Antennas */}
-        {result.antennas.map((antenna, idx) => (
-          <div
-            key={`antenna-${idx}`}
-            className="absolute rounded-full bg-cyan-500/60 border-2 border-cyan-400"
-            style={{
-              left: `${antenna.x * cellSize}px`,
-              top: `${antenna.y * cellSize}px`,
-              width: `${cellSize}px`,
-              height: `${cellSize}px`,
-            }}
-          />
-        ))}
+        {result.antennas.map((antenna, idx) => {
+          const colors = antennaColors[antenna.type] || antennaColors.Pico;
+          return (
+            <div
+              key={`antenna-${idx}`}
+              className={`absolute rounded-full ${colors.bg} border-2 ${colors.border}`}
+              style={{
+                left: `${antenna.x * cellSize}px`,
+                top: `${antenna.y * cellSize}px`,
+                width: `${cellSize}px`,
+                height: `${cellSize}px`,
+              }}
+            />
+          );
+        })}
+      </div>
+
+      {/* Legend */}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 bg-amber-500/40 border border-amber-600/60" />
+          <span className="text-[10px] text-neutral-500">Houses</span>
+        </div>
+        {uniqueTypes.map((type) => {
+          const colors = antennaColors[type] || antennaColors.Pico;
+          return (
+            <div key={type} className="flex items-center gap-1">
+              <div className={`w-3 h-3 rounded-full ${colors.bg} border ${colors.border}`} />
+              <span className="text-[10px] text-neutral-500">{type}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -337,35 +472,35 @@ function VerticalBarChart({
   const maxValue = Math.max(...data.map((r) => Number(r[field]) || 0), 1);
 
   return (
-    <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 flex flex-col h-80">
+    <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6 flex flex-col h-96">
       <h3 className="text-sm font-medium text-neutral-400 mb-6">{title}</h3>
-      <div className="flex-1 flex items-end justify-between gap-4">
+      <div className="flex-1 flex items-end justify-around gap-2">
         {data.map((result) => {
           const value = Number(result[field]) || 0;
-          const percentage = Math.max((value / maxValue) * 100, 4); // Min 4% height for visibility
+          const percentage = Math.max((value / maxValue) * 100, 5); // Min 5% height for visibility
 
           return (
-            <div key={result.algorithm} className="flex-1 flex flex-col items-center gap-3 group">
-              <div className="relative w-full flex justify-center items-end flex-1">
+            <div key={result.algorithm} className="flex flex-col items-center gap-2 group min-w-0">
+              <div className="relative w-full flex justify-center items-end" style={{ height: '240px' }}>
                 <div
-                  className={`w-full max-w-[60px] rounded-t-lg bg-gradient-to-t ${color} opacity-80 group-hover:opacity-100 transition-all duration-500 ease-out relative`}
+                  className={`w-12 rounded-t-lg bg-gradient-to-t ${color} opacity-90 group-hover:opacity-100 transition-all duration-300 relative`}
                   style={{ height: `${percentage}%` }}
                 >
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-neutral-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-neutral-700 pointer-events-none z-10">
+                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-neutral-800 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-neutral-700 pointer-events-none z-10 shadow-lg">
                     {prefix}
                     {value.toLocaleString()}
                     {suffix}
                   </div>
                 </div>
               </div>
-              <div className="text-center">
-                <div className="text-xs font-medium text-neutral-300 capitalize truncate max-w-[80px]" title={result.algorithm.replace("-", " ")}>
-                  {result.algorithm.replace("-", " ")}
+              <div className="text-center w-full">
+                <div className="text-[10px] font-medium text-neutral-300 truncate" title={result.algorithm.replace("-", " ")}>
+                  {result.algorithm.split("-")[0]}
                 </div>
-                <div className="text-[10px] text-neutral-500 mt-1">
+                <div className="text-[9px] text-neutral-500 mt-0.5">
                   {prefix}
                   {Number(value).toLocaleString(undefined, {
-                    maximumFractionDigits: 1,
+                    maximumFractionDigits: 0,
                     notation: value > 10000 ? "compact" : "standard",
                   })}
                   {suffix}
