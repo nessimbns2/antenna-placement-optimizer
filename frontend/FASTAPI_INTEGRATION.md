@@ -42,7 +42,7 @@ Create a Python FastAPI server with this endpoint:
 {
   "grid": [["empty", "house", ...], ...],
   "radius": 3,
-  "algorithm": "greedy" | "genetic" | "simulated-annealing" | "brute-force"
+  "algorithm": "greedy" | "genetic" | "simulated-annealing" | "tabu-search" | "hill-climbing" | "vns"
 }
 ```
 
@@ -83,7 +83,7 @@ class AntennaPosition(BaseModel):
 class OptimizeRequest(BaseModel):
     grid: List[List[str]]
     radius: int
-    algorithm: Literal["greedy", "genetic", "simulated-annealing", "brute-force"]
+    algorithm: Literal["greedy", "genetic", "simulated-annealing", "tabu-search", "hill-climbing", "vns"]
 
 class OptimizeResponse(BaseModel):
     success: bool

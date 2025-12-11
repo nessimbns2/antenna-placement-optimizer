@@ -21,7 +21,7 @@ POST http://localhost:8000/api/optimize
 
 **Grid Values**: `"empty"`, `"house"`, `"antenna"`, `"covered"`
 
-**Algorithms**: `"greedy"`, `"genetic"`, `"simulated-annealing"`, `"brute-force"`
+**Algorithms**: `"greedy"`, `"genetic"`, `"simulated-annealing"`, `"tabu-search"`, `"hill-climbing"`, `"vns"`
 
 ## Response Format
 

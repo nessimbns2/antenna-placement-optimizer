@@ -7,21 +7,12 @@ import { AntennaType, AntennaSpec } from "@/lib/api-config";
 
 interface CalculationPanelProps {
   algorithm:
-    | "greedy"
-    | "genetic"
-    | "simulated-annealing"
-    | "tabu-search"
-    | "hill-climbing"
-    | "vns"
-    | "brute-force";
-  algorithm:
-    | "greedy"
-    | "genetic"
-    | "simulated-annealing"
-    | "tabu-search"
-    | "hill-climbing"
-    | "vns"
-    | "brute-force";
+  | "greedy"
+  | "genetic"
+  | "simulated-annealing"
+  | "tabu-search"
+  | "hill-climbing"
+  | "vns";
   setAlgorithm: (
     a:
       | "greedy"
@@ -30,15 +21,6 @@ interface CalculationPanelProps {
       | "tabu-search"
       | "hill-climbing"
       | "vns"
-      | "brute-force"
-    a:
-      | "greedy"
-      | "genetic"
-      | "simulated-annealing"
-      | "tabu-search"
-      | "hill-climbing"
-      | "vns"
-      | "brute-force"
   ) => void;
   antennaSpecs: AntennaSpec[];
   allowedAntennaTypes: Set<AntennaType>;
@@ -100,8 +82,7 @@ export function CalculationPanel({
   const algorithmOptions = [
     {
       value: "greedy",
-      label: "Greedy ",
-      label: "Greedy ",
+      label: "Greedy",
       description: "Score-based placement (users covered / cost)",
     },
     {
@@ -128,26 +109,6 @@ export function CalculationPanel({
       value: "vns",
       label: "VNS",
       description: "Variable neighborhood search",
-    },
-    {
-      value: "tabu-search",
-      label: "Tabu Search",
-      description: "Avoids cycling with tabu list",
-    },
-    {
-      value: "hill-climbing",
-      label: "Hill Climbing",
-      description: "Fast local search",
-    },
-    {
-      value: "vns",
-      label: "VNS",
-      description: "Variable neighborhood search",
-    },
-    {
-      value: "brute-force",
-      label: "Brute Force",
-      description: "Exhaustive search",
     },
   ] as const;
 
@@ -291,14 +252,12 @@ export function CalculationPanel({
             onChange={(e) =>
               setAlgorithm(
                 e.target.value as
-                  | "greedy"
-                  | "genetic"
-                  | "simulated-annealing"
-                  | "brute-force"
-                  | "greedy"
-                  | "genetic"
-                  | "simulated-annealing"
-                  | "brute-force"
+                | "greedy"
+                | "genetic"
+                | "simulated-annealing"
+                | "tabu-search"
+                | "hill-climbing"
+                | "vns"
               )
             }
             className="w-full bg-slate-950/50 border border-slate-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 outline-none transition-all text-slate-300"
@@ -353,20 +312,10 @@ export function CalculationPanel({
                     ? "Visualizing..."
                     : "Computing..."}
                 </span>
-                <span>
-                  {streamingMode && algorithm === "simulated-annealing"
-                    ? "Visualizing..."
-                    : "Computing..."}
-                </span>
               </>
             ) : (
               <>
                 <Play fill="currentColor" size={18} />
-                <span>
-                  {streamingMode && algorithm === "simulated-annealing"
-                    ? "Watch Optimization"
-                    : "Run Optimizer"}
-                </span>
                 <span>
                   {streamingMode && algorithm === "simulated-annealing"
                     ? "Watch Optimization"
@@ -391,52 +340,7 @@ export function CalculationPanel({
                     style={{ width: `${streamProgress}%` }}
                   />
                 </div>
-          {isOptimizing &&
-            streamingMode &&
-            algorithm === "simulated-annealing" && (
-              <div className="mt-3 space-y-2">
-                <div className="flex justify-between text-xs text-slate-400">
-                  <span>Progress</span>
-                  <span>{streamProgress.toFixed(1)}%</span>
-                </div>
-                <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-200"
-                    style={{ width: `${streamProgress}%` }}
-                  />
-                </div>
 
-                {/* Real-time Stats */}
-                {streamStats && (
-                  <div className="grid grid-cols-2 gap-2 text-xs mt-2">
-                    <div className="bg-slate-800/50 rounded px-2 py-1">
-                      <span className="text-slate-500">🔄 Iteration:</span>
-                      <span className="text-cyan-400 ml-1">
-                        {streamStats.iteration.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="bg-slate-800/50 rounded px-2 py-1">
-                      <span className="text-slate-500">🌡️ Temp:</span>
-                      <span className="text-orange-400 ml-1">
-                        {streamStats.temperature.toFixed(1)}
-                      </span>
-                    </div>
-                    <div className="bg-slate-800/50 rounded px-2 py-1">
-                      <span className="text-slate-500">⚡ Energy:</span>
-                      <span className="text-yellow-400 ml-1">
-                        {streamStats.energy.toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="bg-slate-800/50 rounded px-2 py-1">
-                      <span className="text-slate-500">✓ Accept:</span>
-                      <span className="text-green-400 ml-1">
-                        {streamStats.acceptanceRate.toFixed(1)}%
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
                 {/* Real-time Stats */}
                 {streamStats && (
                   <div className="grid grid-cols-2 gap-2 text-xs mt-2">

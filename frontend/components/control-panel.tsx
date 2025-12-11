@@ -27,9 +27,9 @@ interface ControlPanelProps {
   setSelectedAntennaType: (t: AntennaType) => void;
   coverageColor: string;
   setCoverageColor: (c: string) => void;
-  algorithm: "greedy" | "genetic" | "simulated-annealing" | "brute-force";
+  algorithm: "greedy" | "genetic" | "simulated-annealing";
   setAlgorithm: (
-    a: "greedy" | "genetic" | "simulated-annealing" | "brute-force"
+    a: "greedy" | "genetic" | "simulated-annealing"
   ) => void;
   onRandomize: () => void;
   onClear: () => void;
@@ -77,11 +77,6 @@ export function ControlPanel({
       value: "simulated-annealing",
       label: "Simulated Annealing",
       description: "Temperature-based",
-    },
-    {
-      value: "brute-force",
-      label: "Brute Force",
-      description: "Exhaustive search",
     },
   ] as const;
 

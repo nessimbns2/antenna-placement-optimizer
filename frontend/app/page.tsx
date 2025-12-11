@@ -40,7 +40,7 @@ export default function Home() {
     useState<AntennaType>("Pico");
   const [selectedPattern, setSelectedPattern] = useState<string>("random");
   const [algorithm, setAlgorithm] = useState<
-    "greedy" | "genetic" | "simulated-annealing" | "tabu-search" | "hill-climbing" | "vns" | "brute-force"
+    "greedy" | "genetic" | "simulated-annealing" | "tabu-search" | "hill-climbing" | "vns"
   >("greedy");
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [antennaSpecs, setAntennaSpecs] = useState<AntennaSpec[]>([]);

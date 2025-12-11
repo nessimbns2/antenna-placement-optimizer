@@ -18,7 +18,7 @@ Calculates optimal antenna placements using the specified algorithm.
     ...
   ],
   "radius": 3,
-  "algorithm": "greedy" | "genetic" | "simulated-annealing" | "brute-force"
+  "algorithm": "greedy" | "genetic" | "simulated-annealing" | "tabu-search" | "hill-climbing" | "vns"
 }
 ```
 
@@ -84,7 +84,7 @@ class AntennaPosition(BaseModel):
 class OptimizeRequest(BaseModel):
     grid: List[List[str]]
     radius: int
-    algorithm: Literal["greedy", "genetic", "simulated-annealing", "brute-force"]
+    algorithm: Literal["greedy", "genetic", "simulated-annealing", "tabu-search", "hill-climbing", "vns"]
 
 class OptimizeResponse(BaseModel):
     success: bool
@@ -104,8 +104,12 @@ async def optimize(request: OptimizeRequest):
             antennas = genetic_algorithm(request.grid, request.radius)
         elif request.algorithm == "simulated-annealing":
             antennas = simulated_annealing(request.grid, request.radius)
-        elif request.algorithm == "brute-force":
-            antennas = brute_force_algorithm(request.grid, request.radius)
+        elif request.algorithm == "tabu-search":
+            antennas = tabu_search(request.grid, request.radius)
+        elif request.algorithm == "hill-climbing":
+            antennas = hill_climbing(request.grid, request.radius)
+        elif request.algorithm == "vns":
+            antennas = vns_algorithm(request.grid, request.radius)
         
         return OptimizeResponse(
             success=True,
@@ -129,8 +133,16 @@ def simulated_annealing(grid: List[List[str]], radius: int) -> List[AntennaPosit
     # Your simulated annealing implementation
     pass
 
-def brute_force_algorithm(grid: List[List[str]], radius: int) -> List[AntennaPosition]:
-    # Your brute force implementation
+def tabu_search(grid: List[List[str]], radius: int) -> List[AntennaPosition]:
+    # Your tabu search implementation
+    pass
+
+def hill_climbing(grid: List[List[str]], radius: int) -> List[AntennaPosition]:
+    # Your hill climbing implementation
+    pass
+
+def vns_algorithm(grid: List[List[str]], radius: int) -> List[AntennaPosition]:
+    # Your VNS implementation
     pass
 ```
 

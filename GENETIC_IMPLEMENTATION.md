@@ -86,7 +86,7 @@ The frontend already has full support for the genetic algorithm:
    ```
 
 3. **State Management** (`frontend/app/page.tsx`):
-   - Algorithm state: `"greedy" | "genetic" | "simulated-annealing" | "brute-force"`
+   - Algorithm state: `"greedy" | "genetic" | "simulated-annealing" | "tabu-search" | "hill-climbing" | "vns"`
    - Already sends correct algorithm parameter to API
 
 ## 🚀 How to Use

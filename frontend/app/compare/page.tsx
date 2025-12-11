@@ -18,7 +18,6 @@ export default function ComparePage() {
   const [results, setResults] = useState<OptimizationResponse[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [obstacles, setObstacles] = useState<[number, number][]>([]);
-  const [obstacles, setObstacles] = useState<[number, number][]>([]);
 
   const algorithms = [
     "greedy",
@@ -32,9 +31,6 @@ export default function ComparePage() {
     greedy: "Greedy",
     genetic: "Genetic",
     "simulated-annealing": "Simulated Annealing",
-    "tabu-search": "Tabu Search",
-    "hill-climbing": "Hill Climbing",
-    vns: "VNS",
     "tabu-search": "Tabu Search",
     "hill-climbing": "Hill Climbing",
     vns: "VNS",
@@ -77,8 +73,6 @@ export default function ComparePage() {
       // Generate a single set of obstacles for fair comparison
       const newObstacles = generateRandomObstacles(gridSize);
       setObstacles(newObstacles);
-      const newObstacles = generateRandomObstacles(gridSize);
-      setObstacles(newObstacles);
 
       const promises = algorithms.map(async (algo) => {
         try {
@@ -90,7 +84,6 @@ export default function ComparePage() {
               body: JSON.stringify({
                 width: gridSize,
                 height: gridSize,
-                obstacles: newObstacles,
                 obstacles: newObstacles,
                 algorithm: algo,
                 allowed_antenna_types: Array.from(allowedAntennaTypes),
@@ -185,11 +178,10 @@ export default function ComparePage() {
                     <button
                       key={type}
                       onClick={() => toggleAntennaType(type)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                        allowedAntennaTypes.has(type)
-                          ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20"
-                          : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
-                      }`}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${allowedAntennaTypes.has(type)
+                        ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20"
+                        : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
+                        }`}
                     >
                       {type}
                     </button>
@@ -203,11 +195,10 @@ export default function ComparePage() {
             <button
               onClick={runComparison}
               disabled={isRunning}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
-                isRunning
-                  ? "bg-neutral-800 text-neutral-500 cursor-not-allowed"
-                  : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-lg shadow-blue-900/20"
-              }`}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${isRunning
+                ? "bg-neutral-800 text-neutral-500 cursor-not-allowed"
+                : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-lg shadow-blue-900/20"
+                }`}
             >
               {isRunning ? (
                 <>Running...</>
@@ -259,23 +250,6 @@ export default function ComparePage() {
                 color="from-blue-500 to-blue-600"
                 suffix="ms"
               />
-            </div>
-
-            {/* Grid Visualizations */}
-            <div className="mt-8">
-              <h3 className="text-lg font-semibold text-neutral-300 mb-4">
-                Antenna Placements
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {results.map((result) => (
-                  <ComparisonGrid
-                    key={result.algorithm}
-                    result={result}
-                    gridSize={gridSize}
-                    obstacles={obstacles}
-                  />
-                ))}
-              </div>
             </div>
 
             {/* Grid Visualizations */}
