@@ -3,23 +3,38 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, BarChart3, Play, Settings2 } from "lucide-react";
-import { API_CONFIG, AntennaType, OptimizationResponse } from "@/lib/api-config";
+import {
+  API_CONFIG,
+  AntennaType,
+  OptimizationResponse,
+} from "@/lib/api-config";
 
 export default function ComparePage() {
   const [gridSize, setGridSize] = useState(20);
-  const [allowedAntennaTypes, setAllowedAntennaTypes] = useState<Set<AntennaType>>(
-    new Set(["Femto", "Pico", "Micro", "Macro"])
-  );
+  const [allowedAntennaTypes, setAllowedAntennaTypes] = useState<
+    Set<AntennaType>
+  >(new Set(["Femto", "Pico", "Micro", "Macro"]));
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<OptimizationResponse[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [obstacles, setObstacles] = useState<[number, number][]>([]);
+  const [obstacles, setObstacles] = useState<[number, number][]>([]);
 
-  const algorithms = ["greedy", "genetic", "simulated-annealing", "tabu-search", "hill-climbing", "vns"];
+  const algorithms = [
+    "greedy",
+    "genetic",
+    "simulated-annealing",
+    "tabu-search",
+    "hill-climbing",
+    "vns",
+  ];
   const algorithmLabels: Record<string, string> = {
     greedy: "Greedy",
     genetic: "Genetic",
     "simulated-annealing": "Simulated Annealing",
+    "tabu-search": "Tabu Search",
+    "hill-climbing": "Hill Climbing",
+    vns: "VNS",
     "tabu-search": "Tabu Search",
     "hill-climbing": "Hill Climbing",
     vns: "VNS",
@@ -62,6 +77,8 @@ export default function ComparePage() {
       // Generate a single set of obstacles for fair comparison
       const newObstacles = generateRandomObstacles(gridSize);
       setObstacles(newObstacles);
+      const newObstacles = generateRandomObstacles(gridSize);
+      setObstacles(newObstacles);
 
       const promises = algorithms.map(async (algo) => {
         try {
@@ -73,6 +90,7 @@ export default function ComparePage() {
               body: JSON.stringify({
                 width: gridSize,
                 height: gridSize,
+                obstacles: newObstacles,
                 obstacles: newObstacles,
                 algorithm: algo,
                 allowed_antenna_types: Array.from(allowedAntennaTypes),
@@ -92,7 +110,9 @@ export default function ComparePage() {
       });
 
       const data = await Promise.all(promises);
-      const validResults = data.filter((r): r is OptimizationResponse => r !== null);
+      const validResults = data.filter(
+        (r): r is OptimizationResponse => r !== null
+      );
       setResults(validResults);
 
       if (validResults.length < algorithms.length) {
@@ -165,10 +185,11 @@ export default function ComparePage() {
                     <button
                       key={type}
                       onClick={() => toggleAntennaType(type)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${allowedAntennaTypes.has(type)
-                        ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20"
-                        : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
-                        }`}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                        allowedAntennaTypes.has(type)
+                          ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20"
+                          : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
+                      }`}
                     >
                       {type}
                     </button>
@@ -182,10 +203,11 @@ export default function ComparePage() {
             <button
               onClick={runComparison}
               disabled={isRunning}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${isRunning
-                ? "bg-neutral-800 text-neutral-500 cursor-not-allowed"
-                : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-lg shadow-blue-900/20"
-                }`}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all ${
+                isRunning
+                  ? "bg-neutral-800 text-neutral-500 cursor-not-allowed"
+                  : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white shadow-lg shadow-blue-900/20"
+              }`}
             >
               {isRunning ? (
                 <>Running...</>
@@ -255,6 +277,23 @@ export default function ComparePage() {
                 ))}
               </div>
             </div>
+
+            {/* Grid Visualizations */}
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold text-neutral-300 mb-4">
+                Antenna Placements
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {results.map((result) => (
+                  <ComparisonGrid
+                    key={result.algorithm}
+                    result={result}
+                    gridSize={gridSize}
+                    obstacles={obstacles}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -266,14 +305,21 @@ export default function ComparePage() {
 function AlgorithmRanking({ results }: { results: OptimizationResponse[] }) {
   // Calculate rankings for each metric
   const rankByCost = [...results].sort((a, b) => a.total_cost - b.total_cost);
-  const rankByCoverage = [...results].sort((a, b) => b.coverage_percentage - a.coverage_percentage);
-  const rankByTime = [...results].sort((a, b) => a.execution_time_ms - b.execution_time_ms);
+  const rankByCoverage = [...results].sort(
+    (a, b) => b.coverage_percentage - a.coverage_percentage
+  );
+  const rankByTime = [...results].sort(
+    (a, b) => a.execution_time_ms - b.execution_time_ms
+  );
 
   // Calculate overall score (lower is better)
   const scores = results.map((result) => {
-    const costRank = rankByCost.findIndex((r) => r.algorithm === result.algorithm) + 1;
-    const coverageRank = rankByCoverage.findIndex((r) => r.algorithm === result.algorithm) + 1;
-    const timeRank = rankByTime.findIndex((r) => r.algorithm === result.algorithm) + 1;
+    const costRank =
+      rankByCost.findIndex((r) => r.algorithm === result.algorithm) + 1;
+    const coverageRank =
+      rankByCoverage.findIndex((r) => r.algorithm === result.algorithm) + 1;
+    const timeRank =
+      rankByTime.findIndex((r) => r.algorithm === result.algorithm) + 1;
 
     // Weighted score: coverage is most important, then cost, then time
     const score = coverageRank * 2 + costRank * 1.5 + timeRank * 0.5;
@@ -287,7 +333,9 @@ function AlgorithmRanking({ results }: { results: OptimizationResponse[] }) {
     };
   });
 
-  const rankedScores = [...scores].sort((a, b) => a.overallScore - b.overallScore);
+  const rankedScores = [...scores].sort(
+    (a, b) => a.overallScore - b.overallScore
+  );
 
   const getRankColor = (rank: number) => {
     if (rank === 1) return "text-yellow-400";
@@ -305,22 +353,39 @@ function AlgorithmRanking({ results }: { results: OptimizationResponse[] }) {
 
   return (
     <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
-      <h3 className="text-sm font-semibold text-neutral-300 mb-4">Algorithm Rankings</h3>
+      <h3 className="text-sm font-semibold text-neutral-300 mb-4">
+        Algorithm Rankings
+      </h3>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-neutral-800">
-              <th className="text-left py-3 px-2 text-neutral-400 font-medium">Rank</th>
-              <th className="text-left py-3 px-2 text-neutral-400 font-medium">Algorithm</th>
-              <th className="text-center py-3 px-2 text-neutral-400 font-medium">Coverage</th>
-              <th className="text-center py-3 px-2 text-neutral-400 font-medium">Cost</th>
-              <th className="text-center py-3 px-2 text-neutral-400 font-medium">Time</th>
-              <th className="text-center py-3 px-2 text-neutral-400 font-medium">Score</th>
+              <th className="text-left py-3 px-2 text-neutral-400 font-medium">
+                Rank
+              </th>
+              <th className="text-left py-3 px-2 text-neutral-400 font-medium">
+                Algorithm
+              </th>
+              <th className="text-center py-3 px-2 text-neutral-400 font-medium">
+                Coverage
+              </th>
+              <th className="text-center py-3 px-2 text-neutral-400 font-medium">
+                Cost
+              </th>
+              <th className="text-center py-3 px-2 text-neutral-400 font-medium">
+                Time
+              </th>
+              <th className="text-center py-3 px-2 text-neutral-400 font-medium">
+                Score
+              </th>
             </tr>
           </thead>
           <tbody>
             {rankedScores.map((score, index) => (
-              <tr key={score.algorithm} className="border-b border-neutral-800/50 hover:bg-neutral-800/30 transition-colors">
+              <tr
+                key={score.algorithm}
+                className="border-b border-neutral-800/50 hover:bg-neutral-800/30 transition-colors"
+              >
                 <td className="py-3 px-2">
                   <span className={`text-lg ${getRankColor(index + 1)}`}>
                     {getRankBadge(index + 1)}
@@ -332,17 +397,23 @@ function AlgorithmRanking({ results }: { results: OptimizationResponse[] }) {
                   </span>
                 </td>
                 <td className="text-center py-3 px-2">
-                  <span className={`inline-block px-2 py-1 rounded text-xs ${getRankColor(score.coverageRank)}`}>
+                  <span
+                    className={`inline-block px-2 py-1 rounded text-xs ${getRankColor(score.coverageRank)}`}
+                  >
                     #{score.coverageRank}
                   </span>
                 </td>
                 <td className="text-center py-3 px-2">
-                  <span className={`inline-block px-2 py-1 rounded text-xs ${getRankColor(score.costRank)}`}>
+                  <span
+                    className={`inline-block px-2 py-1 rounded text-xs ${getRankColor(score.costRank)}`}
+                  >
                     #{score.costRank}
                   </span>
                 </td>
                 <td className="text-center py-3 px-2">
-                  <span className={`inline-block px-2 py-1 rounded text-xs ${getRankColor(score.timeRank)}`}>
+                  <span
+                    className={`inline-block px-2 py-1 rounded text-xs ${getRankColor(score.timeRank)}`}
+                  >
                     #{score.timeRank}
                   </span>
                 </td>
@@ -357,7 +428,10 @@ function AlgorithmRanking({ results }: { results: OptimizationResponse[] }) {
         </table>
       </div>
       <div className="mt-4 text-xs text-neutral-500">
-        <p>* Overall score is weighted: Coverage (2x) + Cost (1.5x) + Time (0.5x). Lower score is better.</p>
+        <p>
+          * Overall score is weighted: Coverage (2x) + Cost (1.5x) + Time
+          (0.5x). Lower score is better.
+        </p>
       </div>
     </div>
   );
@@ -393,7 +467,8 @@ function ComparisonGrid({
           {result.algorithm.replace("-", " ")}
         </h4>
         <div className="text-xs text-neutral-500 mt-1">
-          {result.antennas.length} antennas • ${result.total_cost.toLocaleString()}
+          {result.antennas.length} antennas • $
+          {result.total_cost.toLocaleString()}
         </div>
       </div>
       <div
@@ -444,7 +519,9 @@ function ComparisonGrid({
           const colors = antennaColors[type] || antennaColors.Pico;
           return (
             <div key={type} className="flex items-center gap-1">
-              <div className={`w-3 h-3 rounded-full ${colors.bg} border ${colors.border}`} />
+              <div
+                className={`w-3 h-3 rounded-full ${colors.bg} border ${colors.border}`}
+              />
               <span className="text-[10px] text-neutral-500">{type}</span>
             </div>
           );
@@ -480,8 +557,14 @@ function VerticalBarChart({
           const percentage = Math.max((value / maxValue) * 100, 5); // Min 5% height for visibility
 
           return (
-            <div key={result.algorithm} className="flex flex-col items-center gap-2 group min-w-0">
-              <div className="relative w-full flex justify-center items-end" style={{ height: '240px' }}>
+            <div
+              key={result.algorithm}
+              className="flex flex-col items-center gap-2 group min-w-0"
+            >
+              <div
+                className="relative w-full flex justify-center items-end"
+                style={{ height: "240px" }}
+              >
                 <div
                   className={`w-12 rounded-t-lg bg-gradient-to-t ${color} opacity-90 group-hover:opacity-100 transition-all duration-300 relative`}
                   style={{ height: `${percentage}%` }}
@@ -494,7 +577,10 @@ function VerticalBarChart({
                 </div>
               </div>
               <div className="text-center w-full">
-                <div className="text-[10px] font-medium text-neutral-300 truncate" title={result.algorithm.replace("-", " ")}>
+                <div
+                  className="text-[10px] font-medium text-neutral-300 truncate"
+                  title={result.algorithm.replace("-", " ")}
+                >
                   {result.algorithm.split("-")[0]}
                 </div>
                 <div className="text-[9px] text-neutral-500 mt-0.5">
