@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
+import { BarChart3 } from "lucide-react";
 import { GridMap, CellType } from "@/components/grid-map";
 import { CanvasGrid } from "@/components/canvas-grid";
 import { GridSeedingPanel } from "@/components/grid-seeding-panel";
@@ -832,14 +834,23 @@ export default function Home() {
   return (
     <main className="min-h-screen p-4 md:p-8 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black">
       <div className="mx-auto space-y-8">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-400 via-purple-400 to-emerald-400 bg-clip-text text-transparent glow-text">
-            Cellular Network Optimizer
-          </h1>
-          <p className="text-slate-400 text-lg">
-            Interactive simulation for optimal antenna placement and coverage
-            analysis.
-          </p>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="space-y-2">
+            <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-400 via-purple-400 to-emerald-400 bg-clip-text text-transparent glow-text">
+              Cellular Network Optimizer
+            </h1>
+            <p className="text-slate-400 text-lg">
+              Interactive simulation for optimal antenna placement and coverage
+              analysis.
+            </p>
+          </div>
+          <Link
+            href="/compare"
+            className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-all border border-slate-700 shadow-lg"
+          >
+            <BarChart3 className="w-5 h-5" />
+            Compare Algorithms
+          </Link>
         </div>
 
         <StatsCard
