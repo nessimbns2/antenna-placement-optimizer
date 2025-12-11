@@ -351,6 +351,7 @@ export const generateHighwayNetwork: PatternGenerator = (size) => {
 // All patterns with metadata
 export const PATTERNS: PatternDefinition[] = [
     { name: "random", label: "🎲 Random Pattern", fn: generateRandomScattered },
+    { name: "random_scattered", label: "✨ Random Scattered", fn: generateRandomScattered },
     { name: "circular_clusters", label: "🔵 Circular Clusters", fn: generateCircularClusters },
     { name: "isolated_houses", label: "🏠 Isolated Houses", fn: generateIsolatedHouses },
     { name: "urban_grid", label: "🏙️ Urban Grid", fn: generateUrbanGrid },

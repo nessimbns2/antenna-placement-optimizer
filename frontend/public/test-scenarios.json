@@ -1,0 +1,132 @@
+{
+  "name": "Comprehensive Algorithm Test Suite",
+  "description": "Test scenarios for fair algorithm comparison across different grid sizes, patterns, and constraints",
+  "scenarios": [
+    {
+      "gridSize": 25,
+      "pattern": "random_scattered",
+      "maxBudget": null,
+      "maxAntennas": null,
+      "note": "Small - No constraints"
+    },
+    {
+      "gridSize": 25,
+      "pattern": "random_scattered",
+      "maxBudget": 30000,
+      "maxAntennas": null,
+      "note": "Small - Budget limited $30k"
+    },
+    {
+      "gridSize": 25,
+      "pattern": "random_scattered",
+      "maxBudget": null,
+      "maxAntennas": 8,
+      "note": "Small - Max 8 antennas"
+    },
+    {
+      "gridSize": 25,
+      "pattern": "random_scattered",
+      "maxBudget": 25000,
+      "maxAntennas": 6,
+      "note": "Small - Both limits"
+    },
+    {
+      "gridSize": 50,
+      "pattern": "random_scattered",
+      "maxBudget": null,
+      "maxAntennas": null,
+      "note": "Medium - No constraints"
+    },
+    {
+      "gridSize": 50,
+      "pattern": "random_scattered",
+      "maxBudget": 80000,
+      "maxAntennas": null,
+      "note": "Medium - Budget limited $80k"
+    },
+    {
+      "gridSize": 50,
+      "pattern": "random_scattered",
+      "maxBudget": null,
+      "maxAntennas": 20,
+      "note": "Medium - Max 20 antennas"
+    },
+    {
+      "gridSize": 50,
+      "pattern": "random_scattered",
+      "maxBudget": 60000,
+      "maxAntennas": 15,
+      "note": "Medium - Both limits"
+    },
+    {
+      "gridSize": 100,
+      "pattern": "random_scattered",
+      "maxBudget": null,
+      "maxAntennas": null,
+      "note": "Large - No constraints"
+    },
+    {
+      "gridSize": 100,
+      "pattern": "random_scattered",
+      "maxBudget": 150000,
+      "maxAntennas": null,
+      "note": "Large - Budget limited $150k"
+    },
+    {
+      "gridSize": 100,
+      "pattern": "random_scattered",
+      "maxBudget": null,
+      "maxAntennas": 35,
+      "note": "Large - Max 35 antennas"
+    },
+    {
+      "gridSize": 50,
+      "pattern": "circular_clusters",
+      "maxBudget": null,
+      "maxAntennas": null,
+      "note": "Clusters favor Macro antennas"
+    },
+    {
+      "gridSize": 50,
+      "pattern": "isolated_houses",
+      "maxBudget": null,
+      "maxAntennas": null,
+      "note": "Isolated houses favor Femto"
+    },
+    {
+      "gridSize": 50,
+      "pattern": "urban_grid",
+      "maxBudget": null,
+      "maxAntennas": null,
+      "note": "Grid pattern - mixed antenna sizes"
+    },
+    {
+      "gridSize": 50,
+      "pattern": "linear_streets",
+      "maxBudget": null,
+      "maxAntennas": null,
+      "note": "Linear streets - challenging coverage"
+    },
+    {
+      "gridSize": 50,
+      "pattern": "dense_downtown",
+      "maxBudget": null,
+      "maxAntennas": null,
+      "note": "Dense center - favors Macro"
+    },
+    {
+      "gridSize": 50,
+      "pattern": "donut_ring",
+      "maxBudget": null,
+      "maxAntennas": null,
+      "note": "Ring pattern - unique challenge"
+    },
+    {
+      "gridSize": 50,
+      "pattern": "coastal_settlement",
+      "maxBudget": null,
+      "maxAntennas": null,
+      "note": "One-sided distribution"
+    }
+  ]
+}

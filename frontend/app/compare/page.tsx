@@ -54,7 +54,7 @@ const algorithmLabels: Record<string, string> = {
 export default function ComparePage() {
   // Configuration state
   const [gridSize, setGridSize] = useState(20);
-  const [selectedPattern, setSelectedPattern] = useState("random");
+  const [selectedPattern, setSelectedPattern] = useState("random_scattered");
   const [maxBudget, setMaxBudget] = useState<number | null>(null);
   const [maxAntennas, setMaxAntennas] = useState<number | null>(null);
   const [allowedAntennaTypes, setAllowedAntennaTypes] = useState<
@@ -101,6 +101,48 @@ export default function ComparePage() {
 
   const clearScenarios = () => {
     setScenarios([]);
+  };
+
+  // File input ref for import
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = JSON.parse(event.target?.result as string);
+        if (data.scenarios && Array.isArray(data.scenarios)) {
+          const importedScenarios: Scenario[] = data.scenarios.map((s: {
+            gridSize?: number;
+            pattern?: string;
+            maxBudget?: number | null;
+            maxAntennas?: number | null;
+          }) => ({
+            id: crypto.randomUUID(),
+            gridSize: s.gridSize || 50,
+            pattern: s.pattern || "random_scattered",
+            maxBudget: s.maxBudget || null,
+            maxAntennas: s.maxAntennas || null,
+          }));
+          setScenarios([...scenarios, ...importedScenarios]);
+          alert(`Imported ${importedScenarios.length} scenarios!`);
+        } else {
+          alert("Invalid file format. Expected { scenarios: [...] }");
+        }
+      } catch (err) {
+        alert("Failed to parse file. Make sure it's valid JSON.");
+        console.error(err);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = ""; // Reset for re-import
   };
 
   const runSingleComparison = async () => {
@@ -421,6 +463,19 @@ export default function ComparePage() {
             >
               <Plus className="w-4 h-4" />
               Add to Queue
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              onChange={handleImportFile}
+              className="hidden"
+            />
+            <button
+              onClick={handleImportClick}
+              className="flex items-center gap-2 px-6 py-3 rounded-lg font-semibold bg-amber-600 hover:bg-amber-500 text-white"
+            >
+              📂 Import Scenarios
             </button>
           </div>
         </div>
