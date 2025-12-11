@@ -139,3 +139,53 @@ class ErrorResponse(BaseModel):
 
     detail: str = Field(..., description="Error message")
     error_type: str = Field(..., description="Type of error")
+
+
+class OptimizationProgress(BaseModel):
+    """Progress update for streaming optimization."""
+    
+    event_type: str = Field(
+        ..., 
+        description="Event type: 'progress', 'complete', or 'error'"
+    )
+    iteration: int = Field(
+        default=0,
+        description="Current iteration number"
+    )
+    temperature: float = Field(
+        default=0.0,
+        description="Current temperature in annealing"
+    )
+    current_energy: float = Field(
+        default=0.0,
+        description="Energy of current solution"
+    )
+    best_energy: float = Field(
+        default=0.0,
+        description="Energy of best solution found"
+    )
+    antennas: List[AntennaPlacement] = Field(
+        default_factory=list,
+        description="Current antenna placements"
+    )
+    users_covered: int = Field(
+        default=0,
+        description="Users covered by current solution"
+    )
+    total_users: int = Field(
+        default=0,
+        description="Total users to cover"
+    )
+    total_cost: int = Field(
+        default=0,
+        description="Total cost of current solution"
+    )
+    progress_percent: float = Field(
+        default=0.0,
+        description="Overall progress percentage (0-100)"
+    )
+    acceptance_rate: float = Field(
+        default=0.0,
+        description="Current acceptance rate"
+    )
+

@@ -1,9 +1,12 @@
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sse_starlette.sse import EventSourceResponse
+import asyncio
+import json
 import logging
 import time
-from typing import Dict
+from typing import Dict, AsyncGenerator
 
 from app.config import settings
 from app.models import (
@@ -11,6 +14,7 @@ from app.models import (
     OptimizationResponse,
     ErrorResponse,
     AntennaPlacement,
+    AntennaType,
     ANTENNA_SPECS
 )
 from app.algorithms.greedy import GreedyAlgorithm
@@ -247,6 +251,114 @@ async def optimize_antenna_placement(request: OptimizationRequest) -> Optimizati
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Optimization failed: {str(e)}"
         )
+
+
+@app.post(
+    "/optimize/stream",
+    tags=["Optimization"],
+    responses={
+        400: {"model": ErrorResponse, "description": "Bad Request"},
+        500: {"model": ErrorResponse, "description": "Internal Server Error"}
+    }
+)
+async def optimize_stream(request: OptimizationRequest):
+    """
+    Stream optimization progress via Server-Sent Events.
+    
+    Only supports simulated-annealing algorithm for real-time visualization.
+    Sends progress updates at each temperature step.
+    
+    Args:
+        request: Optimization request with grid parameters
+        
+    Returns:
+        EventSourceResponse with streaming progress updates
+    """
+    logger.info(
+        f"Received streaming optimization request: algorithm={request.algorithm}, "
+        f"grid={request.width}x{request.height}"
+    )
+    
+    # Only simulated-annealing supports streaming
+    if request.algorithm != "simulated-annealing":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Streaming only supported for simulated-annealing algorithm"
+        )
+    
+    # Validate houses are within grid bounds
+    for obs_x, obs_y in request.obstacles:
+        if not (0 <= obs_x < request.width and 0 <= obs_y < request.height):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"House at ({obs_x}, {obs_y}) is outside grid bounds"
+            )
+    
+    async def generate_events() -> AsyncGenerator[dict, None]:
+        """Generate SSE events from optimization progress."""
+        try:
+            algorithm = SimulatedAnnealingAlgorithm(
+                width=request.width,
+                height=request.height,
+                antenna_specs=ANTENNA_SPECS,
+                houses=request.obstacles,
+                allowed_antenna_types=request.allowed_antenna_types,
+                max_budget=request.max_budget,
+                max_antennas=request.max_antennas
+            )
+            
+            for progress in algorithm.optimize_streaming():
+                # Convert antenna dicts to serializable format
+                antennas_data = []
+                for ant in progress.get("antennas", []):
+                    ant_type = ant.get("type")
+                    # Handle both AntennaType enum and string
+                    if hasattr(ant_type, 'value'):
+                        type_value = ant_type.value
+                    else:
+                        type_value = str(ant_type)
+                    
+                    antennas_data.append({
+                        "x": ant["x"],
+                        "y": ant["y"],
+                        "type": type_value,
+                        "radius": ant["radius"],
+                        "cost": ant["cost"]
+                    })
+                
+                event_data = {
+                    "event_type": progress["event_type"],
+                    "iteration": progress["iteration"],
+                    "temperature": progress["temperature"],
+                    "current_energy": progress["current_energy"],
+                    "best_energy": progress["best_energy"],
+                    "antennas": antennas_data,
+                    "users_covered": progress["users_covered"],
+                    "total_users": progress["total_users"],
+                    "total_cost": progress["total_cost"],
+                    "progress_percent": progress["progress_percent"],
+                    "acceptance_rate": progress["acceptance_rate"]
+                }
+                
+                # Add extra fields for complete event
+                if progress["event_type"] == "complete":
+                    event_data["coverage_percentage"] = progress.get("coverage_percentage", 0)
+                    event_data["user_coverage_percentage"] = progress.get("user_coverage_percentage", 0)
+                
+                yield {"data": json.dumps(event_data)}
+                
+                # Small delay to allow frontend to process and render
+                await asyncio.sleep(0.05)  # 50ms between updates
+                
+        except Exception as e:
+            logger.error(f"Streaming optimization failed: {str(e)}", exc_info=True)
+            yield {"data": json.dumps({
+                "event_type": "error",
+                "detail": str(e)
+            })}
+    
+    return EventSourceResponse(generate_events())
+
 
 
 @app.exception_handler(Exception)
