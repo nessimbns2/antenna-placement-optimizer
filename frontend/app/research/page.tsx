@@ -288,7 +288,7 @@ const costEfficiency = [
 
 const radarMetrics = [
   {
-    metric: "Coverage",
+    metric: "User Coverage",
     "Sim. Anneal": 100,
     Tabu: 98,
     VNS: 96,
@@ -418,6 +418,11 @@ export default function ResearchPage() {
               <p className="text-slate-400 mt-2">
                 Comprehensive analysis of 6 algorithms across 18 diverse
                 scenarios
+                <br />
+                <span className="text-xs text-slate-500">
+                  📍 Note: "Coverage" refers to percentage of users/houses
+                  covered by antennas, not total map area
+                </span>
               </p>
             </div>
           </div>
@@ -534,10 +539,10 @@ export default function ResearchPage() {
                   <YAxis
                     type="number"
                     dataKey="quality"
-                    name="Quality (%)"
+                    name="User Coverage (%)"
                     tick={{ fill: "#94a3b8" }}
                     label={{
-                      value: "Coverage Quality (%)",
+                      value: "User Coverage (%)",
                       angle: -90,
                       position: "left",
                       fill: "#94a3b8",
@@ -595,7 +600,7 @@ export default function ResearchPage() {
                 ))}
               </div>
               <p className="text-xs text-slate-400 text-center mt-2">
-                Top-left corner = Best (fast + high quality)
+                Top-left corner = Best (fast + high user coverage)
               </p>
             </div>
 
@@ -641,7 +646,7 @@ export default function ResearchPage() {
             {/* Performance by Grid Size */}
             <div className="bg-slate-800/50 rounded-lg p-6">
               <h3 className="text-xl font-semibold mb-4 text-center">
-                📏 Coverage Performance by Grid Size
+                📏 User Coverage Performance by Grid Size
               </h3>
               <ResponsiveContainer width="100%" height={350}>
                 <LineChart data={performanceByGridSize}>
@@ -924,10 +929,10 @@ export default function ResearchPage() {
               house patterns (random, clustered, urban grid, coastal, etc.)
             </p>
             <p>
-              <strong className="text-white">Evaluation Metrics:</strong>{" "}
-              Coverage percentage, cost efficiency ($/Coverage), execution time,
-              user coverage, and antenna count. Rankings based on multi-criteria
-              scoring.
+              <strong className="text-white">Evaluation Metrics:</strong> User
+              coverage percentage (% of houses/users covered by antenna
+              signals), cost efficiency ($/Coverage), execution time, and
+              antenna count. Rankings based on multi-criteria scoring.
             </p>
             <p>
               <strong className="text-white">Constraints Tested:</strong> Budget

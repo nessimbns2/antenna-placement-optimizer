@@ -551,11 +551,10 @@ export default function ComparePage() {
                   <button
                     key={type}
                     onClick={() => toggleAntennaType(type)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                      allowedAntennaTypes.has(type)
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${allowedAntennaTypes.has(type)
                         ? "bg-blue-600 text-white"
                         : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
-                    }`}
+                      }`}
                   >
                     {type}
                   </button>
@@ -852,13 +851,20 @@ function ResultsSection({
       {/* Rankings */}
       <AlgorithmRanking results={results} />
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+      {/* Charts - Row 1 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <VerticalBarChart
-          title="Coverage"
+          title="Area Coverage"
           data={results}
           field="coverage_percentage"
           color="from-emerald-500 to-emerald-600"
+          suffix="%"
+        />
+        <VerticalBarChart
+          title="User Coverage"
+          data={results}
+          field="user_coverage_percentage"
+          color="from-teal-500 to-teal-600"
           suffix="%"
         />
         <VerticalBarChart
@@ -868,6 +874,10 @@ function ResultsSection({
           color="from-amber-500 to-amber-600"
           prefix="$"
         />
+      </div>
+
+      {/* Charts - Row 2 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <VerticalBarChart
           title="Time"
           data={results}
