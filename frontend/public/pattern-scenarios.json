@@ -1,0 +1,206 @@
+{
+  "name": "Pattern-Focused Algorithm Test Suite",
+  "description": "Test scenarios focusing on diverse patterns with varying constraints, budgets, and antenna type restrictions",
+  "scenarios": [
+    {
+      "gridSize": 30,
+      "pattern": "circular_clusters",
+      "maxBudget": 25000,
+      "maxAntennas": 5,
+      "allowedAntennaTypes": ["Micro", "Macro"],
+      "note": "Small clusters - Large antennas only"
+    },
+    {
+      "gridSize": 40,
+      "pattern": "isolated_houses",
+      "maxBudget": 15000,
+      "maxAntennas": 12,
+      "allowedAntennaTypes": ["Femto", "Pico"],
+      "note": "Isolated - Small antennas challenge"
+    },
+    {
+      "gridSize": 60,
+      "pattern": "urban_grid",
+      "maxBudget": 50000,
+      "maxAntennas": 10,
+      "allowedAntennaTypes": ["Pico", "Micro"],
+      "note": "Urban grid - Medium antennas"
+    },
+    {
+      "gridSize": 45,
+      "pattern": "suburban_spread",
+      "maxBudget": null,
+      "maxAntennas": 8,
+      "allowedAntennaTypes": ["Femto", "Pico", "Micro"],
+      "note": "Suburban - No Macro allowed"
+    },
+    {
+      "gridSize": 70,
+      "pattern": "linear_streets",
+      "maxBudget": 45000,
+      "maxAntennas": null,
+      "allowedAntennaTypes": ["Micro", "Macro"],
+      "note": "Streets - Budget limited large"
+    },
+    {
+      "gridSize": 35,
+      "pattern": "dense_downtown",
+      "maxBudget": 30000,
+      "maxAntennas": 3,
+      "allowedAntennaTypes": ["Macro"],
+      "note": "Dense - Macro only challenge"
+    },
+    {
+      "gridSize": 55,
+      "pattern": "donut_ring",
+      "maxBudget": 40000,
+      "maxAntennas": 6,
+      "allowedAntennaTypes": ["Pico", "Micro", "Macro"],
+      "note": "Ring pattern - Mixed sizes"
+    },
+    {
+      "gridSize": 50,
+      "pattern": "diagonal_lines",
+      "maxBudget": null,
+      "maxAntennas": 15,
+      "allowedAntennaTypes": ["Femto", "Pico"],
+      "note": "Diagonal - Small antenna swarm"
+    },
+    {
+      "gridSize": 65,
+      "pattern": "coastal_settlement",
+      "maxBudget": 60000,
+      "maxAntennas": 8,
+      "allowedAntennaTypes": ["Micro", "Macro"],
+      "note": "Coastal - One-sided coverage"
+    },
+    {
+      "gridSize": 80,
+      "pattern": "mountain_valley",
+      "maxBudget": 55000,
+      "maxAntennas": null,
+      "allowedAntennaTypes": ["Pico", "Micro"],
+      "note": "Valley - Linear coverage test"
+    },
+    {
+      "gridSize": 40,
+      "pattern": "checkerboard",
+      "maxBudget": 20000,
+      "maxAntennas": 10,
+      "allowedAntennaTypes": ["Femto", "Micro"],
+      "note": "Checkerboard - Sparse pattern"
+    },
+    {
+      "gridSize": 75,
+      "pattern": "riverside_towns",
+      "maxBudget": 70000,
+      "maxAntennas": 12,
+      "allowedAntennaTypes": ["Pico", "Micro", "Macro"],
+      "note": "Riverside - Along water"
+    },
+    {
+      "gridSize": 90,
+      "pattern": "highway_network",
+      "maxBudget": 80000,
+      "maxAntennas": 15,
+      "allowedAntennaTypes": ["Micro", "Macro"],
+      "note": "Highway - Clustered nodes"
+    },
+    {
+      "gridSize": 25,
+      "pattern": "circular_clusters",
+      "maxBudget": null,
+      "maxAntennas": null,
+      "allowedAntennaTypes": ["Femto"],
+      "note": "Tiny antennas only - Stress test"
+    },
+    {
+      "gridSize": 100,
+      "pattern": "urban_grid",
+      "maxBudget": 120000,
+      "maxAntennas": 20,
+      "allowedAntennaTypes": ["Macro"],
+      "note": "Large grid - Macro only"
+    },
+    {
+      "gridSize": 55,
+      "pattern": "dense_downtown",
+      "maxBudget": null,
+      "maxAntennas": 4,
+      "allowedAntennaTypes": ["Pico", "Macro"],
+      "note": "Dense - Mixed extremes"
+    },
+    {
+      "gridSize": 45,
+      "pattern": "donut_ring",
+      "maxBudget": 35000,
+      "maxAntennas": null,
+      "allowedAntennaTypes": ["Femto", "Pico", "Micro", "Macro"],
+      "note": "Ring - All types budget"
+    },
+    {
+      "gridSize": 60,
+      "pattern": "isolated_houses",
+      "maxBudget": 25000,
+      "maxAntennas": 20,
+      "allowedAntennaTypes": ["Femto", "Pico"],
+      "note": "Large isolated - Small only"
+    },
+    {
+      "gridSize": 70,
+      "pattern": "coastal_settlement",
+      "maxBudget": null,
+      "maxAntennas": 5,
+      "allowedAntennaTypes": ["Macro"],
+      "note": "Coastal - Few Macro challenge"
+    },
+    {
+      "gridSize": 85,
+      "pattern": "checkerboard",
+      "maxBudget": 90000,
+      "maxAntennas": 25,
+      "allowedAntennaTypes": ["Micro", "Macro"],
+      "note": "Large checker - Big coverage"
+    },
+    {
+      "gridSize": 50,
+      "pattern": "mountain_valley",
+      "maxBudget": 30000,
+      "maxAntennas": 6,
+      "allowedAntennaTypes": ["Pico", "Micro"],
+      "note": "Valley - Tight constraints"
+    },
+    {
+      "gridSize": 65,
+      "pattern": "riverside_towns",
+      "maxBudget": 45000,
+      "maxAntennas": null,
+      "allowedAntennaTypes": ["Femto", "Micro"],
+      "note": "Riverside - No Macro/Pico"
+    },
+    {
+      "gridSize": 80,
+      "pattern": "diagonal_lines",
+      "maxBudget": 65000,
+      "maxAntennas": 10,
+      "allowedAntennaTypes": ["Pico", "Macro"],
+      "note": "Large diagonal - Extremes only"
+    },
+    {
+      "gridSize": 35,
+      "pattern": "highway_network",
+      "maxBudget": null,
+      "maxAntennas": 8,
+      "allowedAntennaTypes": ["Micro"],
+      "note": "Small highway - Micro only"
+    },
+    {
+      "gridSize": 95,
+      "pattern": "suburban_spread",
+      "maxBudget": 100000,
+      "maxAntennas": 18,
+      "allowedAntennaTypes": ["Pico", "Micro", "Macro"],
+      "note": "Huge suburban - No Femto"
+    }
+  ]
+}

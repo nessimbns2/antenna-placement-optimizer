@@ -1,0 +1,502 @@
+ALGORITHM COMPARISON - RESEARCH DATA
+Generated: 2025-12-12T08:39:30.091Z
+
+=== SCENARIO 1 ===
+Grid: 30x30 | Pattern: circular_clusters | Houses: 273
+Constraints: Budget=25000 | MaxAnt=5 | Types=Micro,Macro
+
+Algorithm	Coverage%	Cost	Antennas	TimeMs	$/Coverage
+greedy	72.57	18000	3	363.2	248.0
+genetic	72.25	24000	4	303.2	332.2
+simulated-annealing	100.00	30000	1	6296.2	300.0
+tabu-search	100.00	30000	1	779.6	300.0
+hill-climbing	100.00	30000	1	132.4	300.0
+vns	83.67	18000	3	260.3	215.1
+
+Rankings:
+1. simulated-annealing (Score: 13.00)
+2. vns (Score: 15.00)
+3. greedy (Score: 16.50)
+4. tabu-search (Score: 17.75)
+5. hill-climbing (Score: 21.75)
+6. genetic (Score: 26.25)
+
+=== SCENARIO 2 ===
+Grid: 40x40 | Pattern: isolated_houses | Houses: 22
+Constraints: Budget=15000 | MaxAnt=12 | Types=Femto,Pico
+
+Algorithm	Coverage%	Cost	Antennas	TimeMs	$/Coverage
+greedy	8.81	2400	12	4.0	272.4
+genetic	24.71	10000	12	158.8	404.7
+simulated-annealing	40.88	17200	10	2013.2	420.7
+tabu-search	36.44	15700	12	866.5	430.8
+hill-climbing	23.00	10000	12	29.6	434.8
+vns	18.25	7900	11	72.4	432.9
+
+Rankings:
+1. genetic (Score: 15.50)
+2. simulated-annealing (Score: 16.00)
+3. greedy (Score: 16.25)
+4. tabu-search (Score: 19.25)
+5. vns (Score: 19.75)
+6. hill-climbing (Score: 23.50)
+
+=== SCENARIO 3 ===
+Grid: 60x60 | Pattern: urban_grid | Houses: 1354
+Constraints: Budget=50000 | MaxAnt=10 | Types=Pico,Micro
+
+Algorithm	Coverage%	Cost	Antennas	TimeMs	$/Coverage
+greedy	83.21	36600	10	307.9	439.9
+genetic	80.41	44400	10	3204.1	552.2
+simulated-annealing	97.81	48000	8	18793.3	490.7
+tabu-search	98.25	54000	9	6432.2	549.6
+hill-climbing	95.03	48000	8	491.7	505.1
+vns	91.39	50100	9	532.6	548.2
+
+Rankings:
+1. simulated-annealing (Score: 12.50)
+2. greedy (Score: 15.25)
+3. hill-climbing (Score: 16.50)
+4. tabu-search (Score: 18.75)
+5. vns (Score: 22.25)
+6. genetic (Score: 25.00)
+
+=== SCENARIO 4 ===
+Grid: 45x45 | Pattern: suburban_spread | Houses: 576
+Constraints: Budget=None | MaxAnt=8 | Types=Femto,Pico,Micro
+
+Algorithm	Coverage%	Cost	Antennas	TimeMs	$/Coverage
+greedy	2.48	1600	8	106.6	645.2
+genetic	97.31	24800	8	1168.4	254.9
+simulated-annealing	99.01	30000	5	6889.7	303.0
+tabu-search	99.80	30000	5	4934.8	300.6
+hill-climbing	99.41	36000	6	436.6	362.1
+vns	98.91	38300	8	1064.1	387.2
+
+Rankings:
+1. tabu-search (Score: 12.25)
+2. simulated-annealing (Score: 15.50)
+3. genetic (Score: 17.50)
+4. hill-climbing (Score: 17.50)
+5. greedy (Score: 21.75)
+6. vns (Score: 25.75)
+
+=== SCENARIO 5 ===
+Grid: 70x70 | Pattern: linear_streets | Houses: 270
+Constraints: Budget=45000 | MaxAnt=None | Types=Micro,Macro
+
+Algorithm	Coverage%	Cost	Antennas	TimeMs	$/Coverage
+greedy	76.29	42000	7	428.8	550.5
+genetic	72.63	42000	7	491.3	578.3
+simulated-annealing	99.06	60000	2	14457.2	605.7
+tabu-search	99.76	60000	2	3839.6	601.4
+hill-climbing	100.00	90000	3	333.6	900.0
+vns	93.69	72000	4	863.0	768.5
+
+Rankings:
+1. tabu-search (Score: 15.25)
+2. greedy (Score: 15.50)
+3. simulated-annealing (Score: 16.50)
+4. hill-climbing (Score: 18.75)
+5. genetic (Score: 20.75)
+6. vns (Score: 23.50)
+
+=== SCENARIO 6 ===
+Grid: 35x35 | Pattern: dense_downtown | Houses: 120
+Constraints: Budget=30000 | MaxAnt=3 | Types=Macro
+
+Algorithm	Coverage%	Cost	Antennas	TimeMs	$/Coverage
+greedy	92.58	30000	1	68.7	324.0
+genetic	100.00	30000	1	51.1	300.0
+simulated-annealing	100.00	30000	1	3499.4	300.0
+tabu-search	100.00	30000	1	364.8	300.0
+hill-climbing	100.00	30000	1	50.5	300.0
+vns	100.00	30000	1	81.3	300.0
+
+Rankings:
+1. genetic (Score: 7.50)
+2. simulated-annealing (Score: 13.50)
+3. tabu-search (Score: 18.25)
+4. greedy (Score: 20.75)
+5. hill-climbing (Score: 22.25)
+6. vns (Score: 28.00)
+
+=== SCENARIO 7 ===
+Grid: 55x55 | Pattern: donut_ring | Houses: 503
+Constraints: Budget=40000 | MaxAnt=6 | Types=Pico,Micro,Macro
+
+Algorithm	Coverage%	Cost	Antennas	TimeMs	$/Coverage
+greedy	32.24	24300	6	721.4	753.7
+genetic	99.96	38400	5	555.0	384.2
+simulated-annealing	95.11	30000	1	5139.0	315.4
+tabu-search	96.76	30000	1	1967.0	310.0
+hill-climbing	87.27	30000	1	255.2	343.8
+vns	90.25	30000	1	284.9	332.4
+
+Rankings:
+1. tabu-search (Score: 11.75)
+2. simulated-annealing (Score: 13.00)
+3. genetic (Score: 19.25)
+4. vns (Score: 21.00)
+5. hill-climbing (Score: 21.75)
+6. greedy (Score: 23.50)
+
+=== SCENARIO 8 ===
+Grid: 50x50 | Pattern: diagonal_lines | Houses: 211
+Constraints: Budget=None | MaxAnt=15 | Types=Femto,Pico
+
+Algorithm	Coverage%	Cost	Antennas	TimeMs	$/Coverage
+greedy	4.67	3000	15	20.2	642.4
+genetic	15.33	12500	15	964.0	815.4
+simulated-annealing	41.48	31500	15	4070.7	759.4
+tabu-search	43.68	31500	15	2034.8	721.2
+hill-climbing	40.64	31500	15	335.9	775.1
+vns	39.80	31500	15	204.8	791.5
+
+Rankings:
+1. tabu-search (Score: 13.25)
+2. simulated-annealing (Score: 14.50)
+3. greedy (Score: 15.25)
+4. hill-climbing (Score: 20.75)
+5. genetic (Score: 21.00)
+6. vns (Score: 25.50)
+
+=== SCENARIO 9 ===
+Grid: 65x65 | Pattern: coastal_settlement | Houses: 631
+Constraints: Budget=60000 | MaxAnt=8 | Types=Micro,Macro
+
+Algorithm	Coverage%	Cost	Antennas	TimeMs	$/Coverage
+greedy	23.07	30000	5	807.0	1300.4
+genetic	30.44	48000	8	1253.5	1576.9
+simulated-annealing	70.72	30000	1	7930.0	424.2
+tabu-search	66.91	30000	1	1807.1	448.4
+hill-climbing	66.15	36000	2	148.4	544.2
+vns	85.37	30000	1	301.2	351.4
+
+Rankings:
+1. simulated-annealing (Score: 11.00)
+2. vns (Score: 11.00)
+3. tabu-search (Score: 15.75)
+4. greedy (Score: 21.75)
+5. hill-climbing (Score: 21.75)
+6. genetic (Score: 29.00)
+
+=== SCENARIO 10 ===
+Grid: 80x80 | Pattern: mountain_valley | Houses: 1204
+Constraints: Budget=55000 | MaxAnt=None | Types=Pico,Micro
+
+Algorithm	Coverage%	Cost	Antennas	TimeMs	$/Coverage
+greedy	22.67	45300	16	316.9	1998.2
+genetic	26.29	53100	16	3916.8	2019.8
+simulated-annealing	52.83	42000	7	9786.1	795.0
+tabu-search	44.33	36000	6	5872.4	812.1
+hill-climbing	51.47	44100	8	466.9	856.8
+vns	55.89	46200	9	1000.3	826.6
+
+Rankings:
+1. simulated-annealing (Score: 10.50)
+2. tabu-search (Score: 13.25)
+3. vns (Score: 15.25)
+4. hill-climbing (Score: 16.50)
+5. greedy (Score: 25.75)
+6. genetic (Score: 29.00)
+
+=== SCENARIO 11 ===
+Grid: 40x40 | Pattern: checkerboard | Houses: 414
+Constraints: Budget=20000 | MaxAnt=10 | Types=Femto,Micro
+
+Algorithm	Coverage%	Cost	Antennas	TimeMs	$/Coverage
+greedy	3.20	2000	10	66.5	625.0
+genetic	88.36	19400	10	1095.2	219.6
+simulated-annealing	99.81	24000	4	3826.1	240.5
+tabu-search	99.88	24000	4	1276.4	240.3
+hill-climbing	99.56	30000	5	248.0	301.3
+vns	95.56	30000	5	196.9	313.9
+
+Rankings:
+1. tabu-search (Score: 12.25)
+2. simulated-annealing (Score: 13.50)
+3. genetic (Score: 18.00)
+4. hill-climbing (Score: 19.75)
+5. greedy (Score: 22.25)
+6. vns (Score: 24.50)
+
+=== SCENARIO 12 ===
+Grid: 75x75 | Pattern: riverside_towns | Houses: 239
+Constraints: Budget=70000 | MaxAnt=12 | Types=Pico,Micro,Macro
+
+Algorithm	Coverage%	Cost	Antennas	TimeMs	$/Coverage
+greedy	27.26	24600	8	474.9	902.4
+genetic	60.29	57000	12	722.1	945.4
+simulated-annealing	74.38	30000	1	11005.5	403.3
+tabu-search	68.60	36000	2	5080.1	524.8
+hill-climbing	85.74	30000	1	540.0	349.9
+vns	74.08	38100	3	1060.2	514.3
+
+Rankings:
+1. hill-climbing (Score: 9.00)
+2. simulated-annealing (Score: 11.00)
+3. vns (Score: 19.50)
+4. tabu-search (Score: 20.75)
+5. greedy (Score: 21.25)
+6. genetic (Score: 28.75)
+
+=== SCENARIO 13 ===
+Grid: 90x90 | Pattern: highway_network | Houses: 510
+Constraints: Budget=80000 | MaxAnt=15 | Types=Micro,Macro
+
+Algorithm	Coverage%	Cost	Antennas	TimeMs	$/Coverage
+greedy	61.42	54000	9	1169.5	879.2
+genetic	80.40	78000	9	1128.1	970.1
+simulated-annealing	80.01	66000	3	16533.0	824.9
+tabu-search	82.48	60000	2	6642.7	727.4
+hill-climbing	88.73	120000	4	439.1	1352.4
+vns	94.09	90000	3	725.0	956.5
+
+Rankings:
+1. tabu-search (Score: 11.75)
+2. vns (Score: 15.50)
+3. simulated-annealing (Score: 19.00)
+4. greedy (Score: 20.00)
+5. hill-climbing (Score: 21.25)
+6. genetic (Score: 22.75)
+
+=== SCENARIO 14 ===
+Grid: 25x25 | Pattern: circular_clusters | Houses: 364
+Constraints: Budget=None | MaxAnt=None | Types=Femto
+
+Algorithm	Coverage%	Cost	Antennas	TimeMs	$/Coverage
+greedy	64.37	10600	53	6.6	164.7
+genetic	30.65	3400	17	1365.7	110.9
+simulated-annealing	81.60	26000	130	4794.7	318.6
+tabu-search	72.96	10400	52	1901.4	142.5
+hill-climbing	60.64	7400	37	321.9	122.0
+vns	32.48	4000	20	10.7	123.2
+
+Rankings:
+1. genetic (Score: 16.00)
+2. hill-climbing (Score: 16.75)
+3. tabu-search (Score: 17.25)
+4. vns (Score: 17.50)
+5. greedy (Score: 21.25)
+6. simulated-annealing (Score: 21.50)
+
+=== SCENARIO 15 ===
+Grid: 100x100 | Pattern: urban_grid | Houses: 3860
+Constraints: Budget=120000 | MaxAnt=20 | Types=Macro
+
+Algorithm	Coverage%	Cost	Antennas	TimeMs	$/Coverage
+greedy	92.56	120000	4	4680.4	1296.5
+genetic	95.34	120000	4	4260.2	1258.7
+simulated-annealing	99.84	120000	4	29004.9	1201.9
+tabu-search	99.83	120000	4	8408.8	1202.0
+hill-climbing	100.00	150000	5	688.0	1500.0
+vns	92.04	120000	4	451.4	1303.8
+
+Rankings:
+1. simulated-annealing (Score: 12.50)
+2. genetic (Score: 15.75)
+3. greedy (Score: 17.00)
+4. tabu-search (Score: 17.25)
+5. hill-climbing (Score: 20.50)
+6. vns (Score: 27.25)
+
+=== SCENARIO 16 ===
+Grid: 55x55 | Pattern: dense_downtown | Houses: 312
+Constraints: Budget=None | MaxAnt=4 | Types=Pico,Macro
+
+Algorithm	Coverage%	Cost	Antennas	TimeMs	$/Coverage
+greedy	5.34	8400	4	337.8	1573.0
+genetic	74.82	36300	4	368.2	485.2
+simulated-annealing	77.16	30000	1	7389.1	388.8
+tabu-search	93.82	30000	1	2858.3	319.8
+hill-climbing	98.48	30000	1	406.1	304.6
+vns	96.76	30000	1	391.3	310.0
+
+Rankings:
+1. hill-climbing (Score: 11.50)
+2. tabu-search (Score: 15.75)
+3. vns (Score: 16.25)
+4. simulated-annealing (Score: 17.00)
+5. greedy (Score: 22.25)
+6. genetic (Score: 27.50)
+
+=== SCENARIO 17 ===
+Grid: 45x45 | Pattern: donut_ring | Houses: 393
+Constraints: Budget=35000 | MaxAnt=None | Types=Femto,Pico,Micro,Macro
+
+Algorithm	Coverage%	Cost	Antennas	TimeMs	$/Coverage
+greedy	19.36	6000	1	443.4	309.9
+genetic	31.68	14600	15	1481.0	460.9
+simulated-annealing	99.85	30000	1	4494.6	300.5
+tabu-search	99.90	30000	1	1164.8	300.3
+hill-climbing	98.22	30000	1	165.3	305.4
+vns	100.00	30000	1	298.3	300.0
+
+Rankings:
+1. tabu-search (Score: 14.50)
+2. vns (Score: 15.00)
+3. simulated-annealing (Score: 16.00)
+4. greedy (Score: 19.75)
+5. hill-climbing (Score: 21.75)
+6. genetic (Score: 23.25)
+
+=== SCENARIO 18 ===
+Grid: 60x60 | Pattern: isolated_houses | Houses: 43
+Constraints: Budget=25000 | MaxAnt=20 | Types=Femto,Pico
+
+Algorithm	Coverage%	Cost	Antennas	TimeMs	$/Coverage
+greedy	6.75	4000	20	6.5	592.6
+genetic	15.35	15400	20	392.9	1003.3
+simulated-annealing	29.17	30000	17	3617.0	1028.5
+tabu-search	25.89	24900	20	2294.6	961.8
+hill-climbing	25.50	24900	20	275.7	976.5
+vns	12.78	12300	14	84.0	962.4
+
+Rankings:
+1. tabu-search (Score: 15.75)
+2. greedy (Score: 16.25)
+3. vns (Score: 17.00)
+4. simulated-annealing (Score: 19.50)
+5. genetic (Score: 20.50)
+6. hill-climbing (Score: 21.25)
+
+=== SCENARIO 19 ===
+Grid: 70x70 | Pattern: coastal_settlement | Houses: 699
+Constraints: Budget=None | MaxAnt=5 | Types=Macro
+
+Algorithm	Coverage%	Cost	Antennas	TimeMs	$/Coverage
+greedy	40.94	30000	1	716.5	732.8
+genetic	98.10	150000	5	903.2	1529.1
+simulated-annealing	74.98	30000	1	15169.0	400.1
+tabu-search	53.43	30000	1	4559.4	561.5
+hill-climbing	70.94	60000	2	460.8	845.8
+vns	62.33	60000	2	233.9	962.6
+
+Rankings:
+1. simulated-annealing (Score: 10.50)
+2. greedy (Score: 17.75)
+3. hill-climbing (Score: 18.50)
+4. tabu-search (Score: 19.25)
+5. genetic (Score: 21.00)
+6. vns (Score: 23.25)
+
+=== SCENARIO 20 ===
+Grid: 85x85 | Pattern: checkerboard | Houses: 1800
+Constraints: Budget=90000 | MaxAnt=25 | Types=Micro,Macro
+
+Algorithm	Coverage%	Cost	Antennas	TimeMs	$/Coverage
+greedy	95.78	90000	11	3134.8	939.7
+genetic	87.28	90000	15	6351.3	1031.2
+simulated-annealing	99.94	96000	4	34765.1	960.6
+tabu-search	99.85	96000	4	7910.9	961.4
+hill-climbing	99.56	96000	4	359.7	964.2
+vns	100.00	120000	4	1700.2	1200.0
+
+Rankings:
+1. simulated-annealing (Score: 12.50)
+2. greedy (Score: 15.75)
+3. tabu-search (Score: 17.25)
+4. vns (Score: 19.50)
+5. hill-climbing (Score: 21.25)
+6. genetic (Score: 24.00)
+
+=== SCENARIO 21 ===
+Grid: 50x50 | Pattern: mountain_valley | Houses: 452
+Constraints: Budget=30000 | MaxAnt=6 | Types=Pico,Micro
+
+Algorithm	Coverage%	Cost	Antennas	TimeMs	$/Coverage
+greedy	39.40	18300	5	110.8	464.5
+genetic	70.65	24300	6	719.5	343.9
+simulated-annealing	57.44	18000	3	3387.3	313.4
+tabu-search	52.52	12000	2	1152.2	228.5
+hill-climbing	56.84	18000	3	104.0	316.7
+vns	76.08	26100	5	275.4	343.1
+
+Rankings:
+1. simulated-annealing (Score: 13.50)
+2. tabu-search (Score: 14.25)
+3. hill-climbing (Score: 17.25)
+4. vns (Score: 18.25)
+5. genetic (Score: 20.50)
+6. greedy (Score: 26.50)
+
+=== SCENARIO 22 ===
+Grid: 65x65 | Pattern: riverside_towns | Houses: 219
+Constraints: Budget=45000 | MaxAnt=None | Types=Femto,Micro
+
+Algorithm	Coverage%	Cost	Antennas	TimeMs	$/Coverage
+greedy	10.73	11000	55	76.4	1025.2
+genetic	39.19	20600	16	1087.6	525.6
+simulated-annealing	40.47	18000	3	10106.1	444.8
+tabu-search	41.63	18000	3	1569.7	432.4
+hill-climbing	43.38	24000	4	87.4	553.3
+vns	39.64	18000	3	286.9	454.1
+
+Rankings:
+1. tabu-search (Score: 11.75)
+2. simulated-annealing (Score: 13.00)
+3. hill-climbing (Score: 18.50)
+4. vns (Score: 19.25)
+5. greedy (Score: 22.75)
+6. genetic (Score: 25.00)
+
+=== SCENARIO 23 ===
+Grid: 80x80 | Pattern: diagonal_lines | Houses: 207
+Constraints: Budget=65000 | MaxAnt=10 | Types=Pico,Macro
+
+Algorithm	Coverage%	Cost	Antennas	TimeMs	$/Coverage
+greedy	11.01	21000	10	290.2	1907.4
+genetic	53.82	48900	10	633.5	908.6
+simulated-annealing	77.55	60000	2	13714.7	773.7
+tabu-search	79.44	60000	2	4456.5	755.3
+hill-climbing	78.83	90000	3	238.0	1141.7
+vns	79.66	60000	2	619.8	753.2
+
+Rankings:
+1. vns (Score: 12.75)
+2. tabu-search (Score: 14.25)
+3. simulated-annealing (Score: 17.50)
+4. genetic (Score: 21.00)
+5. hill-climbing (Score: 22.25)
+6. greedy (Score: 22.50)
+
+=== SCENARIO 24 ===
+Grid: 35x35 | Pattern: highway_network | Houses: 234
+Constraints: Budget=None | MaxAnt=8 | Types=Micro
+
+Algorithm	Coverage%	Cost	Antennas	TimeMs	$/Coverage
+greedy	96.87	30000	5	54.1	309.7
+genetic	96.77	36000	6	497.6	372.0
+simulated-annealing	92.24	18000	3	4407.2	195.1
+tabu-search	93.80	18000	3	1677.9	191.9
+hill-climbing	98.37	24000	4	115.2	244.0
+vns	99.59	24000	4	66.1	241.0
+
+Rankings:
+1. vns (Score: 13.50)
+2. hill-climbing (Score: 14.75)
+3. tabu-search (Score: 16.25)
+4. simulated-annealing (Score: 17.50)
+5. greedy (Score: 21.25)
+6. genetic (Score: 27.00)
+
+=== SCENARIO 25 ===
+Grid: 95x95 | Pattern: suburban_spread | Houses: 2450
+Constraints: Budget=100000 | MaxAnt=18 | Types=Pico,Micro,Macro
+
+Algorithm	Coverage%	Cost	Antennas	TimeMs	$/Coverage
+greedy	94.94	93000	18	4507.7	979.6
+genetic	83.56	98700	17	9576.7	1181.2
+simulated-annealing	100.00	120000	4	23002.2	1200.0
+tabu-search	99.99	120000	4	12611.8	1200.1
+hill-climbing	98.71	120000	4	1089.0	1215.7
+vns	100.00	120000	4	3404.5	1200.0
+
+Rankings:
+1. simulated-annealing (Score: 11.50)
+2. greedy (Score: 16.25)
+3. tabu-search (Score: 19.25)
+4. vns (Score: 19.50)
+5. genetic (Score: 20.50)
+6. hill-climbing (Score: 23.25)
