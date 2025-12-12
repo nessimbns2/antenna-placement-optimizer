@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { BarChart3 } from "lucide-react";
+import { BarChart3, FlaskConical } from "lucide-react";
 import { GridMap, CellType } from "@/components/grid-map";
 import { CanvasGrid } from "@/components/canvas-grid";
 import { GridSeedingPanel } from "@/components/grid-seeding-panel";
@@ -40,7 +40,12 @@ export default function Home() {
     useState<AntennaType>("Pico");
   const [selectedPattern, setSelectedPattern] = useState<string>("random");
   const [algorithm, setAlgorithm] = useState<
-    "greedy" | "genetic" | "simulated-annealing" | "tabu-search" | "hill-climbing" | "vns"
+    | "greedy"
+    | "genetic"
+    | "simulated-annealing"
+    | "tabu-search"
+    | "hill-climbing"
+    | "vns"
   >("greedy");
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [antennaSpecs, setAntennaSpecs] = useState<AntennaSpec[]>([]);
@@ -837,7 +842,7 @@ export default function Home() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Accept": "text/event-stream",
+          Accept: "text/event-stream",
         },
         body: JSON.stringify({
           width: cols,
@@ -851,7 +856,9 @@ export default function Home() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: "Unknown error" }));
+        const errorData = await response
+          .json()
+          .catch(() => ({ detail: "Unknown error" }));
         throw new Error(errorData.detail || "Streaming optimization failed");
       }
 
@@ -892,7 +899,10 @@ export default function Home() {
                 ) as CellType[][];
 
                 for (const antenna of progress.antennas) {
-                  if (newGrid[antenna.y] && newGrid[antenna.y][antenna.x] !== "house") {
+                  if (
+                    newGrid[antenna.y] &&
+                    newGrid[antenna.y][antenna.x] !== "house"
+                  ) {
                     newGrid[antenna.y][antenna.x] = "antenna";
                   }
                 }
@@ -906,7 +916,8 @@ export default function Home() {
                   coverage_percentage: progress.coverage_percentage || 0,
                   users_covered: progress.users_covered,
                   total_users: progress.total_users,
-                  user_coverage_percentage: progress.user_coverage_percentage || 0,
+                  user_coverage_percentage:
+                    progress.user_coverage_percentage || 0,
                   total_cost: progress.total_cost,
                   algorithm: "simulated-annealing",
                   execution_time_ms: 0,
@@ -992,13 +1003,22 @@ export default function Home() {
               analysis.
             </p>
           </div>
-          <Link
-            href="/compare"
-            className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-all border border-slate-700 shadow-lg"
-          >
-            <BarChart3 className="w-5 h-5" />
-            Compare Algorithms
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/compare"
+              className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-all border border-slate-700 shadow-lg"
+            >
+              <BarChart3 className="w-5 h-5" />
+              Compare Algorithms
+            </Link>
+            <Link
+              href="/research"
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-lg transition-all shadow-lg"
+            >
+              <FlaskConical className="w-5 h-5" />
+              Research
+            </Link>
+          </div>
         </div>
 
         <StatsCard
@@ -1017,7 +1037,9 @@ export default function Home() {
           antennaSpecs={antennaSpecs}
           allowedAntennaTypes={allowedAntennaTypes}
           setAllowedAntennaTypes={setAllowedAntennaTypes}
-          onOptimize={streamingMode ? runStreamingOptimization : runOptimization}
+          onOptimize={
+            streamingMode ? runStreamingOptimization : runOptimization
+          }
           isOptimizing={isOptimizing}
           streamingMode={streamingMode}
           setStreamingMode={setStreamingMode}

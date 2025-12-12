@@ -10,6 +10,7 @@ import {
   Plus,
   Download,
   X,
+  FlaskConical,
 } from "lucide-react";
 import {
   API_CONFIG,
@@ -75,7 +76,9 @@ export default function ComparePage() {
     scenario: Scenario | null;
   } | null>(null);
   const [showPreview, setShowPreview] = useState(false);
-  const [importedResultsPreview, setImportedResultsPreview] = useState<object | null>(null);
+  const [importedResultsPreview, setImportedResultsPreview] = useState<
+    object | null
+  >(null);
 
   const toggleAntennaType = (type: AntennaType) => {
     const newSet = new Set(allowedAntennaTypes);
@@ -123,20 +126,23 @@ export default function ComparePage() {
       try {
         const data = JSON.parse(event.target?.result as string);
         if (data.scenarios && Array.isArray(data.scenarios)) {
-          const importedScenarios: Scenario[] = data.scenarios.map((s: {
-            gridSize?: number;
-            pattern?: string;
-            maxBudget?: number | null;
-            maxAntennas?: number | null;
-            allowedAntennaTypes?: AntennaType[];
-          }) => ({
-            id: crypto.randomUUID(),
-            gridSize: s.gridSize || 50,
-            pattern: s.pattern || "random_scattered",
-            maxBudget: s.maxBudget || null,
-            maxAntennas: s.maxAntennas || null,
-            allowedAntennaTypes: s.allowedAntennaTypes || Array.from(allowedAntennaTypes),
-          }));
+          const importedScenarios: Scenario[] = data.scenarios.map(
+            (s: {
+              gridSize?: number;
+              pattern?: string;
+              maxBudget?: number | null;
+              maxAntennas?: number | null;
+              allowedAntennaTypes?: AntennaType[];
+            }) => ({
+              id: crypto.randomUUID(),
+              gridSize: s.gridSize || 50,
+              pattern: s.pattern || "random_scattered",
+              maxBudget: s.maxBudget || null,
+              maxAntennas: s.maxAntennas || null,
+              allowedAntennaTypes:
+                s.allowedAntennaTypes || Array.from(allowedAntennaTypes),
+            })
+          );
           setScenarios([...scenarios, ...importedScenarios]);
           alert(`Imported ${importedScenarios.length} scenarios!`);
         } else {
@@ -170,22 +176,36 @@ export default function ComparePage() {
         // Check if it has full scenario data for display
         if (data.fullScenarios && Array.isArray(data.fullScenarios)) {
           // Convert to ScenarioResult format
-          const imported: ScenarioResult[] = data.fullScenarios.map((fs: {
-            scenario: { id: string; gridSize: number; pattern: string; maxBudget: number | null; maxAntennas: number | null; allowedAntennaTypes?: AntennaType[] };
-            obstacles: [number, number][];
-            results: OptimizationResponse[];
-          }) => ({
-            scenario: {
-              id: fs.scenario.id || crypto.randomUUID(),
-              gridSize: fs.scenario.gridSize,
-              pattern: fs.scenario.pattern,
-              maxBudget: fs.scenario.maxBudget,
-              maxAntennas: fs.scenario.maxAntennas,
-              allowedAntennaTypes: fs.scenario.allowedAntennaTypes || ["Femto", "Pico", "Micro", "Macro"],
-            },
-            obstacles: fs.obstacles,
-            results: fs.results,
-          }));
+          const imported: ScenarioResult[] = data.fullScenarios.map(
+            (fs: {
+              scenario: {
+                id: string;
+                gridSize: number;
+                pattern: string;
+                maxBudget: number | null;
+                maxAntennas: number | null;
+                allowedAntennaTypes?: AntennaType[];
+              };
+              obstacles: [number, number][];
+              results: OptimizationResponse[];
+            }) => ({
+              scenario: {
+                id: fs.scenario.id || crypto.randomUUID(),
+                gridSize: fs.scenario.gridSize,
+                pattern: fs.scenario.pattern,
+                maxBudget: fs.scenario.maxBudget,
+                maxAntennas: fs.scenario.maxAntennas,
+                allowedAntennaTypes: fs.scenario.allowedAntennaTypes || [
+                  "Femto",
+                  "Pico",
+                  "Micro",
+                  "Macro",
+                ],
+              },
+              obstacles: fs.obstacles,
+              results: fs.results,
+            })
+          );
           setScenarioResults(imported);
           alert(`Loaded ${imported.length} scenarios with full results!`);
         } else {
@@ -262,7 +282,10 @@ export default function ComparePage() {
       setBatchProgress({ current: i + 1, total: scenarios.length });
 
       try {
-        const obstacles = generateObstacles(scenario.pattern, scenario.gridSize);
+        const obstacles = generateObstacles(
+          scenario.pattern,
+          scenario.gridSize
+        );
         const results = await runAlgorithmsOnScenario(scenario, obstacles);
         allResults.push({ scenario, results, obstacles });
       } catch (error) {
@@ -343,7 +366,9 @@ export default function ComparePage() {
         })),
       })),
     };
-    const jsonBlob = new Blob([JSON.stringify(jsonData, null, 2)], { type: "application/json" });
+    const jsonBlob = new Blob([JSON.stringify(jsonData, null, 2)], {
+      type: "application/json",
+    });
     const jsonUrl = URL.createObjectURL(jsonBlob);
     const jsonA = document.createElement("a");
     jsonA.href = jsonUrl;
@@ -364,21 +389,32 @@ export default function ComparePage() {
     results.forEach((sr, idx) => {
       const { scenario, results: algoResults, obstacles } = sr;
       lines.push(`=== SCENARIO ${idx + 1} ===`);
-      lines.push(`Grid: ${scenario.gridSize}x${scenario.gridSize} | Pattern: ${scenario.pattern} | Houses: ${obstacles.length}`);
-      lines.push(`Constraints: Budget=${scenario.maxBudget || "None"} | MaxAnt=${scenario.maxAntennas || "None"} | Types=${scenario.allowedAntennaTypes.join(",")}`);
+      lines.push(
+        `Grid: ${scenario.gridSize}x${scenario.gridSize} | Pattern: ${scenario.pattern} | Houses: ${obstacles.length}`
+      );
+      lines.push(
+        `Constraints: Budget=${scenario.maxBudget || "None"} | MaxAnt=${scenario.maxAntennas || "None"} | Types=${scenario.allowedAntennaTypes.join(",")}`
+      );
       lines.push("");
       lines.push("Algorithm\tCoverage%\tCost\tAntennas\tTimeMs\t$/Coverage");
 
       algoResults.forEach((r) => {
-        const costPerCov = r.coverage_percentage > 0 ? (r.total_cost / r.coverage_percentage).toFixed(1) : "N/A";
-        lines.push(`${r.algorithm}\t${r.coverage_percentage.toFixed(2)}\t${r.total_cost}\t${r.antennas.length}\t${r.execution_time_ms.toFixed(1)}\t${costPerCov}`);
+        const costPerCov =
+          r.coverage_percentage > 0
+            ? (r.total_cost / r.coverage_percentage).toFixed(1)
+            : "N/A";
+        lines.push(
+          `${r.algorithm}\t${r.coverage_percentage.toFixed(2)}\t${r.total_cost}\t${r.antennas.length}\t${r.execution_time_ms.toFixed(1)}\t${costPerCov}`
+        );
       });
 
       lines.push("");
       lines.push("Rankings:");
       const rankings = calculateRankings(algoResults);
       rankings.forEach((r, i) => {
-        lines.push(`${i + 1}. ${r.algorithm} (Score: ${r.overallScore.toFixed(2)})`);
+        lines.push(
+          `${i + 1}. ${r.algorithm} (Score: ${r.overallScore.toFixed(2)})`
+        );
       });
       lines.push("");
     });
@@ -419,6 +455,13 @@ export default function ComparePage() {
               Algorithm Comparison
             </h1>
           </div>
+          <Link
+            href="/research"
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-lg transition-all shadow-lg"
+          >
+            <FlaskConical className="w-5 h-5" />
+            View Research
+          </Link>
         </div>
 
         {/* Configuration Panel */}
@@ -508,10 +551,11 @@ export default function ComparePage() {
                   <button
                     key={type}
                     onClick={() => toggleAntennaType(type)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${allowedAntennaTypes.has(type)
-                      ? "bg-blue-600 text-white"
-                      : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
-                      }`}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      allowedAntennaTypes.has(type)
+                        ? "bg-blue-600 text-white"
+                        : "bg-neutral-800 text-neutral-400 hover:bg-neutral-700"
+                    }`}
                   >
                     {type}
                   </button>
@@ -572,7 +616,9 @@ export default function ComparePage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2 text-green-400">
                 <BarChart3 className="w-5 h-5" />
-                <h3 className="text-lg font-semibold">📊 Loaded Results Preview (Legacy Format)</h3>
+                <h3 className="text-lg font-semibold">
+                  📊 Loaded Results Preview (Legacy Format)
+                </h3>
               </div>
               <button
                 onClick={() => setImportedResultsPreview(null)}
@@ -587,7 +633,8 @@ export default function ComparePage() {
               </pre>
             </div>
             <p className="text-xs text-neutral-500 mt-2">
-              Note: This file was exported in an older format. Re-run the batch test to get full visual results.
+              Note: This file was exported in an older format. Re-run the batch
+              test to get full visual results.
             </p>
           </div>
         )}
@@ -610,8 +657,10 @@ export default function ComparePage() {
             <div className="space-y-2 mb-4">
               {scenarios.map((s, idx) => {
                 const constraintParts: string[] = [];
-                if (s.maxBudget) constraintParts.push(`💰$${s.maxBudget.toLocaleString()}`);
-                if (s.maxAntennas) constraintParts.push(`📡Max ${s.maxAntennas}`);
+                if (s.maxBudget)
+                  constraintParts.push(`💰$${s.maxBudget.toLocaleString()}`);
+                if (s.maxAntennas)
+                  constraintParts.push(`📡Max ${s.maxAntennas}`);
                 const antTypes = s.allowedAntennaTypes.join("/");
                 constraintParts.push(`🔧${antTypes}`);
 
@@ -621,7 +670,10 @@ export default function ComparePage() {
                     className="flex items-center justify-between bg-neutral-800 rounded-lg px-4 py-2"
                   >
                     <span className="text-sm text-neutral-300">
-                      {idx + 1}. {s.gridSize}×{s.gridSize} - {PATTERNS.find((p) => p.name === s.pattern)?.label || s.pattern} | {constraintParts.join(" ")}
+                      {idx + 1}. {s.gridSize}×{s.gridSize} -{" "}
+                      {PATTERNS.find((p) => p.name === s.pattern)?.label ||
+                        s.pattern}{" "}
+                      | {constraintParts.join(" ")}
                     </span>
                     <button
                       onClick={() => removeScenario(s.id)}
@@ -716,7 +768,9 @@ export default function ComparePage() {
                     scenarioResults.map((sr, idx) => ({
                       scenario: `${idx + 1}: ${sr.scenario.gridSize}×${sr.scenario.gridSize} ${sr.scenario.pattern}`,
                       constraints: {
-                        budget: sr.scenario.maxBudget ? `$${sr.scenario.maxBudget.toLocaleString()}` : "None",
+                        budget: sr.scenario.maxBudget
+                          ? `$${sr.scenario.maxBudget.toLocaleString()}`
+                          : "None",
                         antennas: sr.scenario.maxAntennas || "None",
                       },
                       results: sr.results.map((r) => ({
@@ -735,8 +789,12 @@ export default function ComparePage() {
 
             {scenarioResults.map((sr, idx) => {
               const constraintParts: string[] = [];
-              if (sr.scenario.maxBudget) constraintParts.push(`💰$${sr.scenario.maxBudget.toLocaleString()}`);
-              if (sr.scenario.maxAntennas) constraintParts.push(`📡Max ${sr.scenario.maxAntennas}`);
+              if (sr.scenario.maxBudget)
+                constraintParts.push(
+                  `💰$${sr.scenario.maxBudget.toLocaleString()}`
+                );
+              if (sr.scenario.maxAntennas)
+                constraintParts.push(`📡Max ${sr.scenario.maxAntennas}`);
               const antTypes = sr.scenario.allowedAntennaTypes.join("/");
               constraintParts.push(`🔧${antTypes}`);
               const constraintStr = ` | ${constraintParts.join(" ")}`;
@@ -827,9 +885,7 @@ function ResultsSection({
           title="$/Coverage"
           data={results}
           getValue={(r) =>
-            r.coverage_percentage > 0
-              ? r.total_cost / r.coverage_percentage
-              : 0
+            r.coverage_percentage > 0 ? r.total_cost / r.coverage_percentage : 0
           }
           color="from-pink-500 to-pink-600"
           prefix="$"
@@ -869,17 +925,28 @@ function calculateRankings(results: OptimizationResponse[]) {
     (a, b) => a.antennas.length - b.antennas.length
   );
   const rankByEfficiency = [...results].sort((a, b) => {
-    const effA = a.coverage_percentage > 0 ? a.total_cost / a.coverage_percentage : Infinity;
-    const effB = b.coverage_percentage > 0 ? b.total_cost / b.coverage_percentage : Infinity;
+    const effA =
+      a.coverage_percentage > 0
+        ? a.total_cost / a.coverage_percentage
+        : Infinity;
+    const effB =
+      b.coverage_percentage > 0
+        ? b.total_cost / b.coverage_percentage
+        : Infinity;
     return effA - effB;
   });
 
   const scores = results.map((result) => {
-    const costRank = rankByCost.findIndex((r) => r.algorithm === result.algorithm) + 1;
-    const coverageRank = rankByCoverage.findIndex((r) => r.algorithm === result.algorithm) + 1;
-    const timeRank = rankByTime.findIndex((r) => r.algorithm === result.algorithm) + 1;
-    const antennasRank = rankByAntennas.findIndex((r) => r.algorithm === result.algorithm) + 1;
-    const efficiencyRank = rankByEfficiency.findIndex((r) => r.algorithm === result.algorithm) + 1;
+    const costRank =
+      rankByCost.findIndex((r) => r.algorithm === result.algorithm) + 1;
+    const coverageRank =
+      rankByCoverage.findIndex((r) => r.algorithm === result.algorithm) + 1;
+    const timeRank =
+      rankByTime.findIndex((r) => r.algorithm === result.algorithm) + 1;
+    const antennasRank =
+      rankByAntennas.findIndex((r) => r.algorithm === result.algorithm) + 1;
+    const efficiencyRank =
+      rankByEfficiency.findIndex((r) => r.algorithm === result.algorithm) + 1;
 
     const score =
       coverageRank * 2.0 +
@@ -993,14 +1060,17 @@ function AlgorithmRanking({ results }: { results: OptimizationResponse[] }) {
                 </span>
               </td>
               <td className="text-center py-2 px-2">
-                <span className="text-neutral-400">{score.overallScore.toFixed(2)}</span>
+                <span className="text-neutral-400">
+                  {score.overallScore.toFixed(2)}
+                </span>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
       <p className="text-xs text-neutral-500 mt-2">
-        Score formula: Coverage×2 + Cost×1.5 + Efficiency×1 + Antennas×0.5 + Time×0.25 (lower is better)
+        Score formula: Coverage×2 + Cost×1.5 + Efficiency×1 + Antennas×0.5 +
+        Time×0.25 (lower is better)
       </p>
     </div>
   );
@@ -1101,7 +1171,10 @@ function VerticalBarChart({
           const percentage = Math.max((value / maxValue) * 100, 5);
 
           return (
-            <div key={result.algorithm} className="flex flex-col items-center gap-1 group">
+            <div
+              key={result.algorithm}
+              className="flex flex-col items-center gap-1 group"
+            >
               <div className="relative flex justify-center items-end h-32">
                 <div
                   className={`w-6 rounded-t bg-linear-to-t ${color} opacity-80 group-hover:opacity-100 transition-all`}
@@ -1109,7 +1182,8 @@ function VerticalBarChart({
                 />
               </div>
               <div className="text-[8px] text-neutral-500 truncate w-8 text-center">
-                {algorithmLabels[result.algorithm]?.slice(0, 4) || result.algorithm.slice(0, 4)}
+                {algorithmLabels[result.algorithm]?.slice(0, 4) ||
+                  result.algorithm.slice(0, 4)}
               </div>
               <div className="text-[8px] text-neutral-400">
                 {prefix}
