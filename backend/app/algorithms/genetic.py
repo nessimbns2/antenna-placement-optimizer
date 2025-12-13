@@ -1,4 +1,4 @@
-from typing import List, Tuple, Set, Dict
+from typing import List, Tuple, Dict
 import logging
 import random
 import time
@@ -8,7 +8,30 @@ from app.models import AntennaType, AntennaSpec
 
 logger = logging.getLogger(__name__)
 
+# Constants
 USERS_PER_HOUSE = 20  # Each house contains 20 users
+
+# Algorithm tuning parameters
+DEFAULT_POPULATION_SIZE = 150
+DEFAULT_GENERATIONS = 300
+DEFAULT_MUTATION_RATE = 0.2
+DEFAULT_CROSSOVER_RATE = 0.7
+
+# Solution constraints
+MAX_ANTENNAS_PER_HOUSE_RATIO = 0.5  # Max antennas = houses * this ratio
+MIN_ANTENNAS_PER_SOLUTION = 1
+
+# Attempt limits
+RANDOM_SOLUTION_ATTEMPT_MULTIPLIER = 10  # max_attempts = num_antennas * this
+MUTATION_ADD_MAX_ATTEMPTS = 30
+
+# Fitness function weights
+COVERAGE_WEIGHT = 150
+COST_WEIGHT = 40
+FULL_COVERAGE_BONUS = 100
+
+# Selection parameters
+TOURNAMENT_SIZE = 5
 
 
 class GeneticAlgorithm:
@@ -23,10 +46,10 @@ class GeneticAlgorithm:
         allowed_antenna_types: List[AntennaType] | None = None,
         max_budget: int | None = None,
         max_antennas: int | None = None,
-        population_size: int = 50,  # from 30
-        generations: int = 100,     # from 50
-        mutation_rate: float = 0.15,
-        crossover_rate: float = 0.7
+        population_size: int = DEFAULT_POPULATION_SIZE,
+        generations: int = DEFAULT_GENERATIONS,
+        mutation_rate: float = DEFAULT_MUTATION_RATE,
+        crossover_rate: float = DEFAULT_CROSSOVER_RATE
     ):
         """
         Initialize the genetic algorithm.
@@ -47,7 +70,14 @@ class GeneticAlgorithm:
         self.width = width
         self.height = height
         self.max_budget = max_budget
-        self.max_antennas = max_antennas
+
+        # Calculate max_antennas based on house count if not provided
+        if max_antennas is None:
+            # Dynamic calculation: approximately half the number of houses
+            self.max_antennas = max(MIN_ANTENNAS_PER_SOLUTION,
+                                    int(len(houses) * MAX_ANTENNAS_PER_HOUSE_RATIO))
+        else:
+            self.max_antennas = max_antennas
 
         # Filter antenna specs by allowed types
         if allowed_antenna_types:
@@ -64,9 +94,11 @@ class GeneticAlgorithm:
         self.crossover_rate = crossover_rate
 
         logger.info(
-            f"Initialized GeneticAlgorithm: {width}x{height} grid, {len(houses)} houses, "
-            f"population={population_size}, generations={generations}, "
-            f"mutation_rate={mutation_rate}, crossover_rate={crossover_rate}"
+            "Initialized GeneticAlgorithm: %sx%s grid, %s houses, "
+            "population=%s, generations=%s, "
+            "mutation_rate=%s, crossover_rate=%s",
+            width, height, len(houses), population_size, generations,
+            mutation_rate, crossover_rate
         )
 
     def antenna_covers_house(self, antenna: Dict, houses: set) -> bool:
@@ -82,16 +114,17 @@ class GeneticAlgorithm:
         """Remove antennas that don't cover any house."""
         return [antenna for antenna in solution if self.antenna_covers_house(antenna, self.houses)]
 
-    def create_random_solution(self, max_antennas: int = 15) -> List[Dict]:
+    def create_random_solution(self, max_antennas: int | None = None) -> List[Dict]:
         """Create a random solution (chromosome)."""
-        # Use constraint if provided, otherwise use default max
-        if self.max_antennas:
+        # Use instance max_antennas by default
+        if max_antennas is None:
             max_antennas = self.max_antennas
-        
-        num_antennas = random.randint(1, max_antennas)
+
+        num_antennas = random.randint(MIN_ANTENNAS_PER_SOLUTION, max_antennas)
         solution = []
         attempts = 0
-        max_attempts = num_antennas * 3  # Allow more attempts to find valid positions
+        # Allow more attempts to find valid positions
+        max_attempts = num_antennas * RANDOM_SOLUTION_ATTEMPT_MULTIPLIER
 
         while len(solution) < num_antennas and attempts < max_attempts:
             attempts += 1
@@ -167,14 +200,14 @@ class GeneticAlgorithm:
             max_possible_cost if max_possible_cost > 0 else 0
 
         # Fitness function: balance coverage and cost
-        coverage_weight = 100   # High weight for coverage
-        cost_weight = 50        # HUGE weight for cost penalty
+        coverage_weight = COVERAGE_WEIGHT   # High weight for coverage
+        cost_weight = COST_WEIGHT        # Weight for cost penalty
 
         fitness = coverage_weight * coverage_ratio - cost_weight * normalized_cost
 
         # Bonus for 100% coverage
         if coverage_ratio >= 1.0:
-            fitness += 50
+            fitness += FULL_COVERAGE_BONUS
 
         return fitness
 
@@ -185,7 +218,7 @@ class GeneticAlgorithm:
     def selection(self, population: List[List[Dict]], fitnesses: List[float]) -> List[List[Dict]]:
         """Tournament selection: choose best from random subset."""
         selected = []
-        tournament_size = 3
+        tournament_size = TOURNAMENT_SIZE
 
         for _ in range(len(population)):
             # Random tournament
@@ -215,8 +248,7 @@ class GeneticAlgorithm:
         child2 = self.remove_useless_antennas(child2)
 
         # Enforce antenna count constraint first (hard limit)
-        default_max = 15
-        max_allowed = self.max_antennas if self.max_antennas else default_max
+        max_allowed = self.max_antennas
         if len(child1) > max_allowed:
             child1 = child1[:max_allowed]
         if len(child2) > max_allowed:
@@ -248,7 +280,7 @@ class GeneticAlgorithm:
 
             # Add new antenna (only if it covers at least one house)
             attempts = 0
-            max_attempts = 20
+            max_attempts = MUTATION_ADD_MAX_ATTEMPTS
             while attempts < max_attempts:
                 attempts += 1
                 x = random.randint(0, self.width - 1)
@@ -313,8 +345,6 @@ class GeneticAlgorithm:
         logger.info("Starting genetic algorithm optimization...")
         logger.info("Constraint: Every antenna must cover at least one house")
 
-        start_time = time.time()
-
         # Initialize population
         population = self.initialize_population()
         best_solution = None
@@ -336,8 +366,9 @@ class GeneticAlgorithm:
                 avg_antennas = sum(len(sol)
                                    for sol in population) / len(population)
                 logger.info(
-                    f"Generation {generation}: Best Fitness = {best_fitness:.2f}, "
-                    f"Avg = {avg_fitness:.2f}, Avg Antennas = {avg_antennas:.1f}"
+                    "Generation %s: Best Fitness = %.2f, "
+                    "Avg = %.2f, Avg Antennas = %.1f",
+                    generation, best_fitness, avg_fitness, avg_antennas
                 )
 
             # Selection
@@ -357,6 +388,18 @@ class GeneticAlgorithm:
                 next_generation.extend([child1, child2])
 
             population = next_generation[:self.population_size]
+
+        # Check if we found a valid solution
+        if best_solution is None:
+            logger.warning("No valid solution found")
+            return {
+                "antennas": [],
+                "coverage_percentage": 0.0,
+                "users_covered": 0,
+                "total_users": len(self.houses) * USERS_PER_HOUSE,
+                "user_coverage_percentage": 0.0,
+                "total_cost": 0
+            }
 
         # Calculate final statistics for best solution
         covered_houses = set()
@@ -396,12 +439,15 @@ class GeneticAlgorithm:
             antenna, self.houses))
 
         logger.info(
-            f"Genetic Algorithm complete: "
-            f"{len(best_solution)} antennas placed, "
-            f"total cost: ${total_cost}, "
-            f"houses covered: {houses_covered}/{total_houses} ({user_coverage_percentage:.1f}%), "
-            f"users covered: {users_covered}/{total_users}, "
-            f"useless antennas: {useless_count}"
+            "Genetic Algorithm complete: "
+            "%s antennas placed, "
+            "total cost: $%s, "
+            "houses covered: %s/%s (%.1f%%), "
+            "users covered: %s/%s, "
+            "useless antennas: %s",
+            len(best_solution), total_cost,
+            houses_covered, total_houses, user_coverage_percentage,
+            users_covered, total_users, useless_count
         )
 
         return {

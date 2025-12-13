@@ -12,14 +12,14 @@ UNCOVERED_USER_PENALTY = 10.0
 COST_DIVISOR = 1000
 
 # Default parameters
-DEFAULT_MAX_ITERATIONS = 50
+DEFAULT_MAX_ITERATIONS = 100
 DEFAULT_K_MAX = 3
 MAX_INITIAL_ANTENNAS = 5
 
 
 class VNSAlgorithm:
     """Variable Neighborhood Search (VNS) algorithm for antenna placement.
-    
+
     VNS uses multiple neighborhood structures to escape local optima.
     At each iteration:
     1. Shake: Generate random neighbor using current neighborhood k
@@ -105,7 +105,8 @@ class VNSAlgorithm:
         total_cost = 0
 
         for ant in antennas:
-            _, houses = self.get_coverage_area(ant["x"], ant["y"], ant["radius"])
+            _, houses = self.get_coverage_area(
+                ant["x"], ant["y"], ant["radius"])
             covered_houses.update(houses)
             total_cost += ant["cost"]
 
@@ -113,9 +114,10 @@ class VNSAlgorithm:
         uncovered_users = self.total_users - users_covered
 
         objective = total_cost + UNCOVERED_USER_PENALTY * COST_DIVISOR * uncovered_users
-        
+
         if self.max_budget and total_cost > self.max_budget:
-            objective += 100000 * (total_cost - self.max_budget) / self.max_budget
+            objective += 100000 * \
+                (total_cost - self.max_budget) / self.max_budget
 
         return objective
 
@@ -126,7 +128,8 @@ class VNSAlgorithm:
         total_cost = 0
 
         for ant in antennas:
-            cells, houses = self.get_coverage_area(ant["x"], ant["y"], ant["radius"])
+            cells, houses = self.get_coverage_area(
+                ant["x"], ant["y"], ant["radius"])
             covered_cells.update(cells)
             covered_houses.update(houses)
             total_cost += ant["cost"]
@@ -149,13 +152,14 @@ class VNSAlgorithm:
     def generate_initial_solution(self) -> List[Dict]:
         """Generate initial solution using greedy approach."""
         antennas = []
-        max_initial = min(MAX_INITIAL_ANTENNAS, self.max_antennas or MAX_INITIAL_ANTENNAS)
+        max_initial = min(MAX_INITIAL_ANTENNAS,
+                          self.max_antennas or MAX_INITIAL_ANTENNAS)
         house_list = list(self.houses)
-        
+
         if not house_list:
             return antennas
 
-        antenna_types = sorted(self.antenna_specs.keys(), 
+        antenna_types = sorted(self.antenna_specs.keys(),
                                key=lambda t: self.antenna_specs[t].radius, reverse=True)
         placed = set()
 
@@ -185,18 +189,19 @@ class VNSAlgorithm:
 
     def shake(self, solution: List[Dict], k: int) -> List[Dict]:
         """Shaking procedure - generate random neighbor at distance k.
-        
+
         k=1: Single random move/add/remove/change
         k=2: Two random operations
         k=3: Three random operations (more exploration)
         """
         result = deepcopy(solution)
-        
+
         for _ in range(k):
             if not result:
                 # Add random antenna
                 for _ in range(10):
-                    x, y = random.randint(0, self.width-1), random.randint(0, self.height-1)
+                    x, y = random.randint(
+                        0, self.width-1), random.randint(0, self.height-1)
                     if self.is_valid_position(x, y):
                         atype = random.choice(list(self.antenna_specs.keys()))
                         spec = self.antenna_specs[atype]
@@ -211,11 +216,13 @@ class VNSAlgorithm:
             operation = random.choice(["add", "remove", "move", "change"])
             occupied = {(a["x"], a["y"]) for a in result}
             current_cost = sum(a["cost"] for a in result)
-            can_add = self.max_antennas is None or len(result) < self.max_antennas
+            can_add = self.max_antennas is None or len(
+                result) < self.max_antennas
 
             if operation == "add" and can_add:
                 for _ in range(10):
-                    x, y = random.randint(0, self.width-1), random.randint(0, self.height-1)
+                    x, y = random.randint(
+                        0, self.width-1), random.randint(0, self.height-1)
                     if self.is_valid_position(x, y) and (x, y) not in occupied:
                         atype = random.choice(list(self.antenna_specs.keys()))
                         spec = self.antenna_specs[atype]
@@ -235,7 +242,8 @@ class VNSAlgorithm:
             elif operation == "move" and result:
                 idx = random.randint(0, len(result) - 1)
                 for _ in range(10):
-                    x, y = random.randint(0, self.width-1), random.randint(0, self.height-1)
+                    x, y = random.randint(
+                        0, self.width-1), random.randint(0, self.height-1)
                     if self.is_valid_position(x, y) and self.antenna_covers_houses(x, y, result[idx]["radius"]):
                         result[idx]["x"] = x
                         result[idx]["y"] = y
@@ -258,7 +266,7 @@ class VNSAlgorithm:
 
         for _ in range(max_iters):
             improved = False
-            
+
             # Try all single moves
             for i in range(len(current)):
                 # Try changing type
@@ -298,7 +306,8 @@ class VNSAlgorithm:
         best_obj = current_obj
 
         cost, users, _ = self.calculate_metrics(current)
-        logger.info(f"📊 Initial: {len(current)} antennas, obj={current_obj:.2f}, users={users}")
+        logger.info(
+            f"📊 Initial: {len(current)} antennas, obj={current_obj:.2f}, users={users}")
 
         iteration = 0
         while iteration < self.max_iterations:
@@ -310,7 +319,7 @@ class VNSAlgorithm:
 
                 # Shaking
                 shaken = self.shake(current, k)
-                
+
                 # Local search
                 improved = self.local_search(shaken)
                 improved_obj = self.calculate_objective(improved)
@@ -324,29 +333,35 @@ class VNSAlgorithm:
                     if current_obj < best_obj:
                         best = deepcopy(current)
                         best_obj = current_obj
-                        logger.debug(f"✨ New best at iter {iteration}: obj={best_obj:.2f}")
+                        logger.debug(
+                            f"✨ New best at iter {iteration}: obj={best_obj:.2f}")
                 else:
                     k += 1  # Try next neighborhood
 
             if iteration % 10 == 0:
-                logger.info(f"🔀 Iteration {iteration}: best_obj={best_obj:.2f}")
+                logger.info(
+                    f"🔀 Iteration {iteration}: best_obj={best_obj:.2f}")
 
         # Cleanup
         best = self.remove_useless_antennas(best)
 
         # Final metrics
         if best:
-            total_cost, users_covered, total_cells = self.calculate_metrics(best)
+            total_cost, users_covered, total_cells = self.calculate_metrics(
+                best)
         else:
             total_cost, users_covered, total_cells = 0, 0, 0
 
         total_area = self.width * self.height
-        coverage_percentage = (total_cells / total_area * 100) if total_area > 0 else 0
-        user_coverage_percentage = (users_covered / self.total_users * 100) if self.total_users > 0 else 0
+        coverage_percentage = (total_cells / total_area *
+                               100) if total_area > 0 else 0
+        user_coverage_percentage = (
+            users_covered / self.total_users * 100) if self.total_users > 0 else 0
 
         logger.info(f"🏁 VNS complete: {len(best)} antennas")
         logger.info(f"💰 Total cost: ${total_cost:,}")
-        logger.info(f"👥 Users: {users_covered}/{self.total_users} ({user_coverage_percentage:.2f}%)")
+        logger.info(
+            f"👥 Users: {users_covered}/{self.total_users} ({user_coverage_percentage:.2f}%)")
 
         return {
             "antennas": best,
