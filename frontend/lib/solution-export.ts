@@ -1,4 +1,5 @@
 import { AntennaType, OptimizationResponse } from "./api-config";
+import { CellType } from "../components/grid-map";
 
 export interface SolutionData {
   version: string;
@@ -24,7 +25,7 @@ export interface SolutionData {
 export function exportSolution(
   rows: number,
   cols: number,
-  grid: string[][],
+  grid: CellType[][],
   manualAntennas: Map<string, AntennaType>,
   optimizationResult: OptimizationResponse | null,
   algorithm?: string,
@@ -104,7 +105,7 @@ export async function importSolution(
 export interface SolutionStateSetters {
   setRows: (v: number) => void;
   setCols: (v: number) => void;
-  setGrid: (g: string[][]) => void;
+  setGrid: (g: CellType[][]) => void;
   setManualAntennas: (m: Map<string, AntennaType>) => void;
   setOptimizationResult: (r: OptimizationResponse | null) => void;
   setAlgorithm?: (a: string) => void;
@@ -121,7 +122,7 @@ export function applySolutionData(
   const { rows, cols } = data.gridSize;
 
   // Create empty grid
-  const newGrid = new Array(rows);
+  const newGrid: CellType[][] = new Array(rows);
   for (let r = 0; r < rows; r++) {
     newGrid[r] = new Array(cols).fill("empty");
   }
