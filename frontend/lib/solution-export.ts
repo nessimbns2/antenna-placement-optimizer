@@ -108,8 +108,8 @@ export interface SolutionStateSetters {
   setGrid: (g: CellType[][]) => void;
   setManualAntennas: (m: Map<string, AntennaType>) => void;
   setOptimizationResult: (r: OptimizationResponse | null) => void;
-  setAlgorithm?: (a: string) => void;
-  setAllowedAntennaTypes?: (types: Set<AntennaType>) => void;
+  setAlgorithm?: (a: any) => void;
+  setAllowedAntennaTypes?: (types: any) => void;
 }
 
 /**
